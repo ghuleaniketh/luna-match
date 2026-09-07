@@ -58,6 +58,13 @@ def test_orchestrator_rag_processing(orchestrator):
     assert response.intent == IntentType.RAG_KNOWLEDGE
     assert "search_lunar_knowledge" in response.tools_called
     assert len(response.sources) > 0
+    assert "OHRC" in response.text_response
+    assert "0.25" in response.text_response or "resolution" in response.text_response.lower()
+
+    metric_response = orchestrator.process("What does RMSE mean in image registration?")
+    assert metric_response.intent == IntentType.RAG_KNOWLEDGE
+    assert "rmse" in metric_response.text_response.lower()
+    assert "pixel" in metric_response.text_response.lower() or "error" in metric_response.text_response.lower()
 
 
 def test_orchestrator_registration_flow(orchestrator, test_images):

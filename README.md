@@ -126,12 +126,22 @@ python -m app.rag.retriever --query "What does RMSE mean in image registration?"
 python -m app.rag.retriever --query "Why is uniform distribution of match points important?"
 ```
 
-### 3. Run Automated Unit Tests
+### 3. Run the Interactive Judge Demo
+For a zero-setup walkthrough of the AI layer, run this from the repository root:
+```bash
+python demo.py
+```
+
+Choose options `1`-`7` for cited ISRO/RAG explanations or option `8` to run the
+end-to-end registration simulation with measured RMSE, inlier ratio, and a
+grounded multimodal interpretation. Press `Q` to exit.
+
+### 4. Run Automated Unit Tests
 ```bash
 pytest tests/test_rag.py -v
 ```
 
-### 4. Start FastAPI Backend
+### 5. Start FastAPI Backend
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```

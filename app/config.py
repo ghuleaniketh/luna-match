@@ -25,11 +25,17 @@ class Settings(BaseSettings):
 
     # VLM Configuration
     VLM_MODEL: str = "Qwen/Qwen3-VL-8B-Instruct"
+    # Backend: "transformers" = local Qwen3-VL, "openai" = vLLM/OpenAI API, "mock" = offline demo
     VLM_BACKEND: Literal["openai", "transformers", "mock"] = "mock"
     VLM_BASE_URL: str = "https://api.openai.com/v1"
     VLM_API_KEY: str = ""
-    VLM_MAX_TOKENS: int = 1024
-    VLM_TEMPERATURE: float = 0.2
+    VLM_MAX_TOKENS: int = 2048       # max_new_tokens for generation
+
+    # Qwen3-VL recommended VL generation hyperparameters
+    VLM_TEMPERATURE: float = 0.7    # Qwen3-VL VL default
+    VLM_TOP_P: float = 0.8          # Qwen3-VL VL default
+    VLM_TOP_K: int = 20             # Qwen3-VL VL default
+    VLM_REPETITION_PENALTY: float = 1.0  # Qwen3-VL VL default
 
     # RAG Configuration
     RAG_EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"

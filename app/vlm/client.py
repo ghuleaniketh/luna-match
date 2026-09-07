@@ -9,6 +9,7 @@ from typing import List, Union, Optional, Dict, Any
 from pathlib import Path
 import base64
 import io
+import re
 from PIL import Image
 
 from app.config import settings
@@ -123,32 +124,92 @@ class OpenAIVLMClient(BaseVLMClient):
 
 class TransformersVLMClient(BaseVLMClient):
     """
-    Local HuggingFace Transformers VLM Client for Qwen3-VL-8B-Instruct.
-    Intended for GPU/CUDA environments.
+    Official Qwen3-VL-8B-Instruct local inference client using HuggingFace Transformers.
+
+    Uses:
+    - Qwen3VLForConditionalGeneration  (correct class for Qwen3-VL)
+    - processor.apply_chat_template()  (official message format)
+    - dtype="auto", device_map="auto"  (as recommended by Qwen team)
+    - Recommended VL hyperparameters:  top_p=0.8, top_k=20, temperature=0.7,
+                                       repetition_penalty=1.0, presence_penalty=1.5
+
+    Install prerequisites:
+        pip install git+https://github.com/huggingface/transformers
+        pip install accelerate qwen-vl-utils
     """
 
     def __init__(self, model_name: str = settings.VLM_MODEL):
         self.model_name = model_name
         self._model = None
         self._processor = None
+        # Generation kwargs sourced from settings (overridable via .env)
+        self._gen_kwargs_base = dict(
+            do_sample=True,
+            top_p=settings.VLM_TOP_P,
+            top_k=settings.VLM_TOP_K,
+            temperature=settings.VLM_TEMPERATURE,
+            repetition_penalty=settings.VLM_REPETITION_PENALTY,
+        )
 
     def _load(self):
-        if self._model is None:
-            import torch
-            from transformers import AutoProcessor, AutoModelForCausalLM
+        """Lazy-load model and processor on first call."""
+        if self._model is not None:
+            return
 
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            print(f"[TransformersVLMClient] Loading {self.model_name} onto {device}...")
-            self._processor = AutoProcessor.from_pretrained(
-                self.model_name,
-                trust_remote_code=True,
+        try:
+            from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
+        except ImportError:
+            raise ImportError(
+                "Qwen3VLForConditionalGeneration not found. "
+                "Install the latest transformers:\n"
+                "  pip install git+https://github.com/huggingface/transformers\n"
+                "  pip install accelerate qwen-vl-utils"
             )
-            self._model = AutoModelForCausalLM.from_pretrained(
-                self.model_name,
-                torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-                device_map="auto" if device == "cuda" else None,
-                trust_remote_code=True,
-            )
+
+        print(f"[TransformersVLMClient] Loading {self.model_name} with dtype=auto, device_map=auto …")
+        print("[TransformersVLMClient] This may take several minutes on first run (model download ~16 GB).")
+
+        # Exactly as the official Qwen3-VL quickstart recommends
+        self._model = Qwen3VLForConditionalGeneration.from_pretrained(
+            self.model_name,
+            dtype="auto",          # fp16 on CUDA, fp32/bf16 on CPU as appropriate
+            device_map="auto",     # auto-shards across available GPUs / CPU
+        )
+        self._processor = AutoProcessor.from_pretrained(self.model_name)
+        print(f"[TransformersVLMClient] Model loaded on device: {self._model.device}")
+
+    def _build_messages(
+        self,
+        prompt: str,
+        images: Optional[List[Union[str, Path, Image.Image]]],
+        system_prompt: str,
+    ) -> List[Dict[str, Any]]:
+        """
+        Build the role-based message list in the format Qwen3-VL expects.
+        Images are embedded directly as PIL Images in the content list.
+        """
+        messages = []
+
+        # System message
+        messages.append({"role": "system", "content": system_prompt})
+
+        # User message: interleave images + text exactly as in the official example
+        user_content: List[Dict[str, Any]] = []
+
+        if images:
+            for img in images:
+                if isinstance(img, (str, Path)):
+                    pil_img = Image.open(img).convert("RGB")
+                elif isinstance(img, Image.Image):
+                    pil_img = img.convert("RGB")
+                else:
+                    continue
+                user_content.append({"type": "image", "image": pil_img})
+
+        user_content.append({"type": "text", "text": prompt})
+        messages.append({"role": "user", "content": user_content})
+
+        return messages
 
     def generate(
         self,
@@ -161,32 +222,43 @@ class TransformersVLMClient(BaseVLMClient):
         self._load()
         import torch
 
-        pil_images = []
-        if images:
-            for img in images:
-                if isinstance(img, (str, Path)):
-                    pil_images.append(Image.open(img).convert("RGB"))
-                elif isinstance(img, Image.Image):
-                    pil_images.append(img.convert("RGB"))
-
         sys_prompt = system_prompt or SYSTEM_PROMPT
-        combined_text = f"<|im_start|>system\n{sys_prompt}<|im_end|>\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+        max_new_tokens = max_tokens or settings.VLM_MAX_TOKENS
 
-        inputs = self._processor(
-            text=[combined_text],
-            images=pil_images if pil_images else None,
+        messages = self._build_messages(prompt, images, sys_prompt)
+
+        # apply_chat_template: tokenize + add generation prompt in one call
+        # (exactly as shown in the official Qwen3-VL quickstart)
+        inputs = self._processor.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_dict=True,
             return_tensors="pt",
         )
-        if torch.cuda.is_available():
-            inputs = {k: v.to("cuda") for k, v in inputs.items()}
+        inputs = inputs.to(self._model.device)
+
+        # Build generation kwargs; allow per-call temperature override
+        gen_kwargs = dict(self._gen_kwargs_base)
+        if temperature is not None:
+            gen_kwargs["temperature"] = temperature
+        gen_kwargs["max_new_tokens"] = max_new_tokens
 
         with torch.no_grad():
-            output_ids = self._model.generate(
-                **inputs,
-                max_new_tokens=max_tokens or settings.VLM_MAX_TOKENS,
-            )
+            generated_ids = self._model.generate(**inputs, **gen_kwargs)
 
-        return self._processor.decode(output_ids[0], skip_special_tokens=True)
+        # Trim prompt tokens — keep only newly generated tokens
+        generated_ids_trimmed = [
+            out_ids[len(in_ids):]
+            for in_ids, out_ids in zip(inputs["input_ids"], generated_ids)
+        ]
+
+        output_texts = self._processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+        return output_texts[0].strip() if output_texts else ""
 
 
 class MockVLMClient(BaseVLMClient):
@@ -241,7 +313,10 @@ class MockVLMClient(BaseVLMClient):
             )
 
         # Scenario 3: Registration Explanation with Metrics
-        elif "metrics" in prompt_lower or "rmse" in prompt_lower or "inlier" in prompt_lower:
+        elif (
+            ("metrics" in prompt_lower or "rmse" in prompt_lower or "inlier" in prompt_lower)
+            and "retrieved knowledge sources:" not in prompt_lower
+        ):
             return (
                 "### [Registration Interpretation Report]\n\n"
                 "**1. Measured Core ML Metrics**:\n"
@@ -259,6 +334,27 @@ class MockVLMClient(BaseVLMClient):
                 "(e.g., co-registering OHRC sub-meter imagery with TMC-2 3D DEMs). The inlier ratio of 78.9% demonstrates "
                 "that the RANSAC algorithm successfully rejected putative false matches and resolved illumination disparities."
             )
+
+        elif not images and "retrieved knowledge sources:" in prompt_lower:
+            source_blocks = re.findall(
+                r"--- \[Knowledge Source \d+: (.*?)\] ---\s*\n(.*?)(?=\n--- \[Knowledge Source|\Z)",
+                prompt,
+                flags=re.DOTALL,
+            )
+            if source_blocks:
+                facts = []
+                citations = []
+                for source, text in source_blocks[:3]:
+                    normalized_text = re.sub(r"\s+", " ", text).strip()
+                    facts.append(f"- {normalized_text}")
+                    citations.append(source.split(" (Similarity:", 1)[0])
+                return (
+                    "Based on the retrieved LUNA-MATCH knowledge base:\n\n"
+                    + "\n".join(facts)
+                    + "\n\nSources: "
+                    + "; ".join(citations)
+                )
+            return "I could not find a matching source in the indexed lunar knowledge base."
 
         # Fallback text response
         else:

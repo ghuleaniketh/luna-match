@@ -4,13 +4,13 @@ Demonstrates Grounded Planetary Knowledge RAG, Qwen3-VL Vision Reasoning,
 and Core ML Image Registration Interpretation.
 """
 
-import sys
 import time
 from pathlib import Path
 
-from app.orchestrator.agent import LunaMatchOrchestrator, IntentType
+from app.orchestrator.agent import LunaMatchOrchestrator
 from app.rag.retriever import LunarRAGRetriever
-from app.config import settings
+
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 BANNER = """
 ================================================================================
@@ -43,14 +43,21 @@ def print_box(title: str, content: str, border_char: str = "-"):
 def run_demo():
     print(BANNER)
     print("[*] Initializing Grounded Lunar RAG Retriever...")
-    retriever = LunarRAGRetriever()
-    if not retriever.load():
-        print("[!] Index not found. Auto-ingesting knowledge base...")
-        from app.rag.ingest import ingest_knowledge_base
-        ingest_knowledge_base()
-        retriever.load()
+    try:
+        retriever = LunarRAGRetriever()
+        if not retriever.load():
+            print("[!] Index not found. Auto-ingesting knowledge base...")
+            from app.rag.ingest import ingest_knowledge_base
+            ingest_knowledge_base()
+            if not retriever.load():
+                raise RuntimeError("The RAG index could not be loaded after ingestion.")
 
-    orchestrator = LunaMatchOrchestrator()
+        orchestrator = LunaMatchOrchestrator()
+    except Exception as exc:
+        print(f"[!] Demo startup failed: {exc}")
+        print("    Install requirements with: python -m pip install -r requirements.txt")
+        return
+
     print("[+] RAG Knowledge Base Loaded Successfully (29 authoritative chunks indexed)!\n")
 
     while True:
@@ -63,7 +70,11 @@ def run_demo():
         print("  [Q] Quit Demo")
         print("-" * 75)
 
-        choice = input("\nEnter choice [1-8, C, Q]: ").strip()
+        try:
+            choice = input("\nEnter choice [1-8, C, Q]: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nExiting LUNA-MATCH Demo.\n")
+            break
 
         if choice.lower() in ["q", "exit", "quit"]:
             print("\nExiting LUNA-MATCH Demo. Good luck with the judging session! 🚀\n")
@@ -99,12 +110,13 @@ def run_demo():
         # Registration Simulation Flow
         if is_registration_sim:
             print("\n[*] Running End-to-End Image Registration Demo...")
-            sample_src = Path("data/sample_images/source_ohrc_sample.png")
-            sample_ref = Path("data/sample_images/reference_tmc2_sample.png")
+            sample_dir = PROJECT_ROOT / "data" / "sample_images"
+            sample_src = sample_dir / "source_ohrc_sample.png"
+            sample_ref = sample_dir / "reference_tmc2_sample.png"
 
             if not sample_src.exists():
                 from data.sample_images.generate_samples import create_sample_lunar_images
-                create_sample_lunar_images(Path("data/sample_images"))
+                create_sample_lunar_images(sample_dir)
 
             print(f"  -> Loading Source (OHRC): {sample_src}")
             print(f"  -> Loading Reference (TMC-2): {sample_ref}")
