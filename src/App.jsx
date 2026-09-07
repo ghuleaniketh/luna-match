@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import Hero from './components/Hero/Hero';
 import Convergence from './components/Convergence/Convergence';
 import AnalysisWorkspace from './components/AnalysisWorkspace/AnalysisWorkspace';
+import ChatPanel from './components/Chatbot/ChatPanel';
+import ChatToggle from './components/Chatbot/ChatToggle';
 
 export default function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
   return (
     <div className="relative flex min-h-screen flex-col bg-[#030712] text-slate-100">
       <div
@@ -26,6 +31,16 @@ export default function App() {
         <Convergence />
         <AnalysisWorkspace />
       </main>
+
+      <AnimatePresence>
+        {isChatOpen && (
+          <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+        )}
+      </AnimatePresence>
+      <ChatToggle
+        isOpen={isChatOpen}
+        onToggle={() => setIsChatOpen((open) => !open)}
+      />
     </div>
   );
 }
