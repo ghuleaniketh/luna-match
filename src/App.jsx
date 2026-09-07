@@ -1,6 +1,7 @@
 import React from 'react';
 import Hero from './components/Hero/Hero';
 import Convergence from './components/Convergence/Convergence';
+import AnalysisWorkspace from './components/AnalysisWorkspace/AnalysisWorkspace';
 
 export default function App() {
   return (
@@ -8,6 +9,7 @@ export default function App() {
       <main className="flex-1">
         <Hero />
         <Convergence />
+        <AnalysisWorkspace />
       </main>
     </div>
   );
