@@ -20,7 +20,7 @@ function Moon() {
 
     const maxDim = Math.max(size.x, size.y, size.z);
     // Generous clean scale
-    const scale = 5 / (maxDim || 1);
+    const scale = 3.4 / (maxDim || 1);
     clone.scale.setScalar(scale);
 
     return clone;
@@ -36,7 +36,7 @@ function Moon() {
 export default function MoonModel() {
   return (
     <Canvas
-      camera={{ position: [0, 5, 4.5], fov: 40 }}
+      camera={{ position: [0, 0, 4.5], fov: 40 }}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
       style={{ width: "100%", height: "100%", background: "transparent" }}
