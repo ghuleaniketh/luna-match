@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import MoonModel from "../Hero/MoonModel";
 
 export default function Convergence() {
   const sectionRef = useRef(null);
@@ -45,7 +46,7 @@ export default function Convergence() {
           </defs>
 
           <motion.path
-            d="M150,150 L780,300"
+            d="M500,150 L895,300"
             stroke="url(#beam1)"
             strokeWidth="2"
             fill="none"
@@ -54,7 +55,7 @@ export default function Convergence() {
             transition={lineTransition}
           />
           <motion.path
-            d="M150,450 L780,300"
+            d="M500,450 L895,300"
             stroke="url(#beam2)"
             strokeWidth="2"
             fill="none"
@@ -68,7 +69,7 @@ export default function Convergence() {
         <motion.img
           src="/Satellite.png"
           alt=""
-          className="absolute left-[10%] top-[18%] z-20 w-20 md:w-28"
+          className="absolute left-1/2 top-[18%] z-20 w-24 -translate-x-1/2 rotate-[10deg] md:w-32"
           initial={{ opacity: 0, y: -10 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
@@ -78,35 +79,16 @@ export default function Convergence() {
         <motion.img
           src="/Satellite.png"
           alt=""
-          className="absolute left-[10%] top-[68%] z-20 w-20 -scale-x-100 md:w-28"
+          className="absolute left-1/2 top-[68%] z-20 w-24 -translate-x-1/2 -rotate-[10deg] -scale-x-100 md:w-32"
           initial={{ opacity: 0, y: 10 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.1 }}
         />
 
-        {/* Moon */}
-        <motion.div
-          className="absolute right-[-8%] top-1/2 z-10 aspect-square w-[55%] -translate-y-1/2 rounded-full bg-cover bg-center md:w-[42%]"
-          style={{
-            backgroundImage: "url(/moon1.png)",
-            boxShadow:
-              "0 0 0 1px rgba(255,255,255,0.05), 0 0 80px 10px rgba(6,182,212,0.08)",
-          }}
-          initial={{ opacity: 0.6 }}
-          animate={
-            inView
-              ? {
-                  boxShadow: [
-                    "0 0 0 1px rgba(255,255,255,0.05), 0 0 80px 10px rgba(6,182,212,0.08)",
-                    "0 0 0 1px rgba(255,255,255,0.08), 0 0 100px 20px rgba(6,182,212,0.18)",
-                    "0 0 0 1px rgba(255,255,255,0.05), 0 0 80px 10px rgba(6,182,212,0.08)",
-                  ],
-                  opacity: 1,
-                }
-              : {}
-          }
-          transition={{ duration: 2.5, delay: 1.4, ease: "easeInOut" }}
-        />
+        {/* Static shared moon, kept fully within the diagram */}
+        <div className="absolute right-[-32%] top-1/2 z-10 aspect-square w-[64%] -translate-y-1/2 md:right-[-27%] md:w-[54%]">
+          <MoonModel autoRotate={false} />
+        </div>
       </div>
     </section>
   );

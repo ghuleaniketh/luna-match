@@ -3,7 +3,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
-function Moon() {
+function Moon({ autoRotate }) {
   const { scene } = useGLTF("/moon.glb");
   const ref = useRef();
 
@@ -27,13 +27,13 @@ function Moon() {
   }, [scene]);
 
   useFrame((_, delta) => {
-    if (ref.current) ref.current.rotation.y += delta * 0.15;
+    if (autoRotate && ref.current) ref.current.rotation.y += delta * 0.15;
   });
 
   return <primitive ref={ref} object={normalized} />;
 }
 
-export default function MoonModel() {
+export default function MoonModel({ autoRotate = true }) {
   return (
     <Canvas
       camera={{ position: [0, 0, 4.5], fov: 40 }}
@@ -45,7 +45,7 @@ export default function MoonModel() {
       <directionalLight position={[4, 2, 5]} intensity={2.0} />
       <directionalLight position={[-3, -1, -2]} intensity={0.4} />
       <Suspense fallback={null}>
-        <Moon />
+        <Moon autoRotate={autoRotate} />
       </Suspense>
     </Canvas>
   );
