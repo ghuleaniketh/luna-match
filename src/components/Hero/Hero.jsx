@@ -13,7 +13,7 @@ export default function Hero() {
         loop
         playsInline
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#030712]/80 via-[#030712]/60 to-[#030712]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#030712]/60 via-[#030712]/40 to-[#030712]/75 opacity-0" />
 
       {/* Floating 80% width Nav */}
       <header className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4">
@@ -68,32 +68,30 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
           {/* Left Column: Headline & Content */}
           <div className="lg:col-span-7 max-w-2xl z-10 relative lg:pl-6">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none text-white">
+            <h1 className="whitespace-nowrap text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none text-white">
               LUNA-MATCH
             </h1>
 
-            {/* Floating 2D satellite positioned under LUNA-MATCH */}
-            <div className="relative mt-6 sm:mt-8 flex items-center">
-              <motion.img
-                src="/Satellite.png"
-                alt="Satellite"
-                className="pointer-events-none w-20 sm:w-28 md:w-32 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]"
-                animate={{ y: [0, -12, 0], rotate: [0, 2, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </div>
-
-            <p className="mt-6 max-w-xl text-base sm:text-lg text-white/70 leading-relaxed">
+            <div className="relative mt-3 sm:mt-4">
+            <p className="max-w-xl text-base sm:text-lg text-white/70 leading-relaxed">
               LUNA-MATCH finds the same lunar feature across images captured
               under different sun angles, scales, and sensors — where standard
               matching fails.
             </p>
+            </div>
           </div>
 
           {/* Right Column: 3D Moon Model (shifted further to the right) */}
           <div className="lg:col-span-5 flex items-center justify-center lg:justify-end relative min-h-[420px] h-[450px] sm:h-[540px] lg:h-[620px] w-full lg:translate-x-12">
             {/* Glow behind moon */}
             <div className="absolute w-72 h-72 sm:w-96 sm:h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+            <motion.img
+              src="/Satellite.png"
+              alt="Satellite approaching the moon"
+              className="pointer-events-none absolute z-20 top-10 left-0 sm:top-14 sm:left-4 lg:top-16 lg:left-6 w-16 sm:w-20 md:w-24 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]"
+              animate={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            />
             <div className="w-full h-full relative z-10">
               <MoonModel />
             </div>
