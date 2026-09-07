@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Hero from './components/Hero/Hero';
 import Convergence from './components/Convergence/Convergence';
+import AboutImages from './components/AboutImages/AboutImages';
 import AnalysisWorkspace from './components/AnalysisWorkspace/AnalysisWorkspace';
 import ChatPanel from './components/Chatbot/ChatPanel';
 import ChatToggle from './components/Chatbot/ChatToggle';
@@ -29,6 +30,7 @@ export default function App() {
       <main className="relative z-10 flex-1">
         <Hero />
         <Convergence />
+        <AboutImages />
         <AnalysisWorkspace />
       </main>
 
