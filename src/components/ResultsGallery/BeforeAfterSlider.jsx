@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Eye, MoveHorizontal, Maximize2, Sparkles, Layers } from 'lucide-react';
+import { Eye, MoveHorizontal } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 
 export default function BeforeAfterSlider({ sourceImage, registeredImage, label = "Aligned Correspondence Comparison" }) {
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -36,7 +39,7 @@ export default function BeforeAfterSlider({ sourceImage, registeredImage, label 
   }, []);
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-md flex flex-col h-full">
+    <Card className="flex h-full flex-col rounded-2xl border-slate-800/80 bg-slate-900/60 p-5 shadow-none">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Eye className="w-4 h-4 text-cyan-400" />
@@ -44,16 +47,18 @@ export default function BeforeAfterSlider({ sourceImage, registeredImage, label 
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            type="button"
+            size="sm"
             onClick={() => setShowDifferenceMode(!showDifferenceMode)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono border transition-all cursor-pointer ${
+            className={`cursor-pointer font-mono ${
               showDifferenceMode
-                ? 'bg-orange-950/60 text-orange-400 border-orange-500/40'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                ? 'border-orange-500/40 bg-orange-950/60 text-orange-400'
+                : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
             {showDifferenceMode ? 'Blend Mode: Difference' : 'Split Slider Mode'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -74,9 +79,9 @@ export default function BeforeAfterSlider({ sourceImage, registeredImage, label 
               alt="Source Blend"
               className="absolute inset-0 w-full h-full object-cover mix-blend-difference opacity-90 filter contrast-150"
             />
-            <div className="absolute top-3 left-3 bg-black/80 backdrop-blur px-2.5 py-1 rounded text-[11px] text-orange-400 font-mono border border-orange-500/30">
+            <Badge variant="warning" className="absolute left-3 top-3 bg-black/80 font-mono text-[11px]">
               Registration Residual Map (Zero delta = Dark)
-            </div>
+            </Badge>
           </div>
         ) : (
           <>
@@ -86,9 +91,9 @@ export default function BeforeAfterSlider({ sourceImage, registeredImage, label 
               alt="Registered Aligned Surface"
               className="absolute inset-0 w-full h-full object-cover pointer-events-none"
             />
-            <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded text-[11px] text-orange-400 font-mono border border-orange-500/30 z-10">
+            <Badge variant="warning" className="absolute right-3 top-3 z-10 bg-slate-950/80 font-mono text-[11px]">
               Target Reference
-            </div>
+            </Badge>
 
             {/* Foreground Source Image (Clipped Left Side) */}
             <div
@@ -101,9 +106,9 @@ export default function BeforeAfterSlider({ sourceImage, registeredImage, label 
                 className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                 style={{ width: '100%', maxWidth: 'none' }}
               />
-              <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded text-[11px] text-cyan-400 font-mono border border-cyan-500/30 z-10">
+              <Badge className="absolute left-3 top-3 z-10 bg-slate-950/80 font-mono text-[11px]">
                 Source Orbit
-              </div>
+              </Badge>
             </div>
 
             {/* Slider Divider Line */}
@@ -123,6 +128,6 @@ export default function BeforeAfterSlider({ sourceImage, registeredImage, label 
         <span>Offset: {sliderPosition.toFixed(0)}%</span>
         <span>Drag to verify sub-pixel ridge alignment</span>
       </div>
-    </div>
+    </Card>
   );
 }

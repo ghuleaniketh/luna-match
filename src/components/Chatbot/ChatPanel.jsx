@@ -16,6 +16,15 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 const QUICK_ACTIONS = ['Explain Result', 'Analyze Matches', 'Explain RMSE', 'Compare Images'];
+import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Send, Bot, User, X } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+import { Input } from '../ui/input';
+
+const MotionCard = motion(Card);
 
 const INITIAL_MESSAGES = [
   {
@@ -94,6 +103,11 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
       transition={{ duration: 0.22, ease: 'easeOut' }}
       className={`fixed right-4 top-4 z-50 flex w-[min(460px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#050b17]/95 shadow-2xl shadow-black/50 backdrop-blur-2xl ${isMinimized ? 'bottom-auto h-auto' : 'bottom-4 h-[min(720px,calc(100vh-2rem))]'}`}
       aria-label="LUNA AI assistant"
+    <MotionCard
+      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 30, scale: 0.95 }}
+      className="fixed bottom-24 right-6 z-50 flex h-[520px] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border-slate-800 bg-slate-950/95 shadow-2xl ring-1 ring-cyan-500/20"
     >
       <header className="flex items-center justify-between border-b border-white/10 bg-white/[0.035] px-4 py-3.5">
         <div className="flex min-w-0 items-center gap-3">
@@ -136,6 +150,50 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
                 {isTyping && <TypingIndicator />}
                 <div ref={messagesEndRef} />
               </div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
+              Luna-Copilot <Badge className="px-1.5 py-0.5 text-[10px]">AI Model</Badge>
+            </h4>
+            <p className="text-[11px] text-emerald-400 font-mono">● Online & Ready</p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="h-8 w-8 cursor-pointer"
+          aria-label="Close assistant"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Message history */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex items-start gap-2.5 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}
+          >
+            <div
+              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs ${
+                msg.sender === 'user' ? 'bg-cyan-600 text-slate-950 font-bold' : 'bg-slate-800 text-cyan-400 border border-slate-700'
+              }`}
+            >
+              {msg.sender === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+            </div>
+            <div
+              className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                msg.sender === 'user'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-medium rounded-tr-none'
+                  : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none shadow-md'
+              }`}
+            >
+              <p>{msg.text}</p>
+              <span className={`block text-[10px] mt-1 text-right font-mono ${msg.sender === 'user' ? 'text-slate-800' : 'text-slate-500'}`}>
+                {msg.timestamp}
+              </span>
             </div>
 
             <div className="border-t border-white/10 bg-[#07101e]/80 px-3 pt-2.5">
@@ -156,6 +214,50 @@ function SuggestedQuestions({ onSelect }) {
     <div className="mt-4 grid grid-cols-2 gap-2 pl-9">
       {SUGGESTED_QUESTIONS.map((question) => <button key={question} type="button" onClick={() => onSelect(question)} className="rounded-lg border border-white/10 bg-white/[0.025] px-2.5 py-2 text-left text-[10px] leading-snug text-slate-400 transition-colors hover:border-cyan-400/35 hover:bg-cyan-950/30 hover:text-cyan-100">{question}</button>)}
     </div>
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Suggested prompts */}
+      <div className="p-2 border-t border-slate-800/80 bg-slate-900/30 overflow-x-auto whitespace-nowrap flex gap-1.5 no-scrollbar">
+        {SUGGESTED_QUESTIONS.map((q, i) => (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            key={i}
+            onClick={() => handleSend(q)}
+            className="h-auto shrink-0 cursor-pointer rounded-full bg-slate-800/80 px-2.5 py-1 text-[11px] hover:border-cyan-500/40 hover:bg-slate-800"
+          >
+            {q}
+          </Button>
+        ))}
+      </div>
+
+      {/* Input bar */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSend();
+        }}
+        className="p-3 border-t border-slate-800 bg-slate-900/80 flex items-center gap-2"
+      >
+        <Input
+          type="text"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder="Ask about correspondence models..."
+          className="h-9 flex-1 rounded-xl px-3.5 py-2 text-xs font-sans"
+        />
+        <Button
+          type="submit"
+          disabled={!inputText.trim()}
+          size="icon"
+          className="h-9 w-9 cursor-pointer rounded-xl"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
+      </form>
+    </MotionCard>
   );
 }
 

@@ -19,7 +19,7 @@ export default function Convergence() {
         <svg
           viewBox="0 0 1000 600"
           preserveAspectRatio="none"
-          className="absolute inset-0 z-10 h-full w-full"
+          className="absolute inset-0 z-20 h-full w-full"
         >
           <defs>
             <linearGradient id="beam1" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -50,6 +50,7 @@ export default function Convergence() {
             animate={inView ? { pathLength: 1 } : { pathLength: 0 }}
             transition={{ ...lineTransition, delay: 0.15 }}
           />
+          <circle cx="1000" cy="300" r="5" fill="#f8fafc" />
         </svg>
 
         {/* Satellite 1 */}
