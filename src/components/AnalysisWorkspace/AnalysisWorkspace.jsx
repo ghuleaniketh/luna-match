@@ -86,7 +86,7 @@ export default function AnalysisWorkspace() {
   return (
     <section
       id="analyze"
-      className="relative bg-[#030712] px-8 py-28 text-white md:px-16"
+      className="relative px-8 py-28 text-white md:px-16"
     >
       <div className="mx-auto max-w-4xl">
         <p className="mb-3 text-sm text-cyan-400">Run your own</p>

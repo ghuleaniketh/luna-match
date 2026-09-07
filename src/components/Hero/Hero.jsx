@@ -3,18 +3,7 @@ import MoonModel from "./MoonModel";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#030712] text-white flex flex-col justify-between">
-      {/* Background video */}
-      <video
-        className="absolute inset-0 h-full w-full object-cover opacity-40"
-        src="/backgoundvideo.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#030712]/60 via-[#030712]/40 to-[#030712]/75 opacity-0" />
-
+    <section className="relative flex min-h-screen flex-col justify-between overflow-hidden text-white">
       {/* Floating 80% width Nav */}
       <header className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4">
         <motion.nav
@@ -88,9 +77,15 @@ export default function Hero() {
             <motion.img
               src="/Satellite.png"
               alt="Satellite approaching the moon"
-              className="pointer-events-none absolute z-20 top-10 left-0 sm:top-14 sm:left-4 lg:top-16 lg:left-6 w-16 sm:w-20 md:w-24 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]"
-              animate={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
+              className="pointer-events-none absolute right-0 top-0 z-20 w-24 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)] sm:right-0 sm:top-0 sm:w-28 md:w-32 lg:right-0 lg:top-0"
+              animate={{ y: [0, -8, 0], rotate: [-12, -10, -12] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.span
+              aria-hidden="true"
+              className="pointer-events-none absolute right-24 top-28 z-30 h-3 w-3 rounded-full bg-cyan-200 shadow-[0_0_18px_6px_rgba(103,232,249,0.7)] sm:right-32 sm:top-36 md:right-36"
+              animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.15, 0.8] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
             />
             <div className="w-full h-full relative z-10">
               <MoonModel />
