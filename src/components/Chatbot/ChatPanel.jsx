@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Sparkles, X, Compass, Terminal, ShieldAlert } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Send, Bot, User, X } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+import { Input } from '../ui/input';
+
+const MotionCard = motion(Card);
 
 const INITIAL_MESSAGES = [
   {
@@ -78,11 +84,11 @@ export default function ChatPanel({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <motion.div
+    <MotionCard
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 30, scale: 0.95 }}
-      className="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-2rem)] h-[520px] bg-slate-950/95 border border-slate-800 rounded-3xl shadow-2xl backdrop-blur-2xl z-50 flex flex-col overflow-hidden ring-1 ring-cyan-500/20"
+      className="fixed bottom-24 right-6 z-50 flex h-[520px] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border-slate-800 bg-slate-950/95 shadow-2xl ring-1 ring-cyan-500/20"
     >
       {/* Header */}
       <div className="p-4 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
@@ -92,17 +98,21 @@ export default function ChatPanel({ isOpen, onClose }) {
           </div>
           <div>
             <h4 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-              Luna-Copilot <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">AI Model</span>
+              Luna-Copilot <Badge className="px-1.5 py-0.5 text-[10px]">AI Model</Badge>
             </h4>
             <p className="text-[11px] text-emerald-400 font-mono">● Online & Ready</p>
           </div>
         </div>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+          className="h-8 w-8 cursor-pointer"
+          aria-label="Close assistant"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Message history */}
@@ -147,13 +157,16 @@ export default function ChatPanel({ isOpen, onClose }) {
       {/* Suggested prompts */}
       <div className="p-2 border-t border-slate-800/80 bg-slate-900/30 overflow-x-auto whitespace-nowrap flex gap-1.5 no-scrollbar">
         {SUGGESTED_QUESTIONS.map((q, i) => (
-          <button
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
             key={i}
             onClick={() => handleSend(q)}
-            className="text-[11px] px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/60 hover:border-cyan-500/40 transition-colors shrink-0 cursor-pointer"
+            className="h-auto shrink-0 cursor-pointer rounded-full bg-slate-800/80 px-2.5 py-1 text-[11px] hover:border-cyan-500/40 hover:bg-slate-800"
           >
             {q}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -165,21 +178,22 @@ export default function ChatPanel({ isOpen, onClose }) {
         }}
         className="p-3 border-t border-slate-800 bg-slate-900/80 flex items-center gap-2"
       >
-        <input
+        <Input
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Ask about correspondence models..."
-          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 font-sans"
+          className="h-9 flex-1 rounded-xl px-3.5 py-2 text-xs font-sans"
         />
-        <button
+        <Button
           type="submit"
           disabled={!inputText.trim()}
-          className="p-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 transition-colors cursor-pointer"
+          size="icon"
+          className="h-9 w-9 cursor-pointer rounded-xl"
         >
           <Send className="w-4 h-4" />
-        </button>
+        </Button>
       </form>
-    </motion.div>
+    </MotionCard>
   );
 }

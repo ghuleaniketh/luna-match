@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import MoonModel from "./MoonModel";
+import { Button } from "../ui/button";
 
 export default function Hero() {
   return (
@@ -43,12 +44,15 @@ export default function Hero() {
           </div>
 
           {/* Quick CTA */}
-          <a
+          <Button
+            as="a"
             href="#demo"
-            className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all hover:scale-105 active:scale-95"
+            size="sm"
+            variant="outline"
+            className="hidden rounded-full sm:inline-flex"
           >
             Launch
-          </a>
+          </Button>
         </motion.nav>
       </header>
 

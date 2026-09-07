@@ -1,5 +1,9 @@
 import { useRef, useState } from "react";
 import { UploadCloud, X, Sparkles, Loader2 } from "lucide-react";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { Card } from "../ui/card";
+import { Input } from "../ui/input";
 
 function ImageBox({ label, image, onSelect, onClear }) {
   const inputRef = useRef(null);
@@ -10,16 +14,16 @@ function ImageBox({ label, image, onSelect, onClear }) {
   };
 
   return (
-    <div
+    <Card
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
         handleFile(e.dataTransfer.files?.[0]);
       }}
       onClick={() => !image && inputRef.current?.click()}
-      className="relative flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.02] transition-colors hover:border-cyan-400/40"
+      className="relative flex h-64 flex-col items-center justify-center rounded-2xl border-dashed border-white/15 bg-white/[0.02] p-0 transition-colors hover:border-cyan-400/40"
     >
-      <input
+      <Input
         ref={inputRef}
         type="file"
         accept="image/*"
@@ -34,25 +38,28 @@ function ImageBox({ label, image, onSelect, onClear }) {
             alt={label}
             className="h-full w-full rounded-2xl object-cover"
           />
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
             onClick={(e) => {
               e.stopPropagation();
               onClear();
             }}
-            className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-white/80 hover:text-white"
+            className="absolute right-2 top-2 h-8 w-8 rounded-full border-white/20 bg-black/70 p-0 text-white/80 hover:text-white"
             aria-label={`Clear ${label}`}
           >
             <X size={14} />
-          </button>
+          </Button>
         </>
       ) : (
         <div className="flex cursor-pointer flex-col items-center gap-2 text-white/50">
           <UploadCloud size={24} />
-          <span className="text-sm">{label}</span>
+          <Badge variant="outline">{label}</Badge>
           <span className="text-xs text-white/30">Click or drag an image</span>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -114,14 +121,12 @@ export default function AnalysisWorkspace() {
         </div>
 
         <div className="mt-8">
-          <button
+          <Button
             onClick={handleRun}
             disabled={!canRun}
-            className={`flex items-center gap-2 rounded-full px-8 py-3 text-sm font-medium transition-all ${
-              !canRun
-                ? "cursor-not-allowed bg-white/5 text-white/25"
-                : "bg-gradient-to-r from-cyan-400 to-orange-400 text-[#030712] hover:scale-105"
-            }`}
+            variant="gradient"
+            size="lg"
+            className="rounded-full"
           >
             {isRunning ? (
               <>
@@ -134,7 +139,7 @@ export default function AnalysisWorkspace() {
                 Find Correspondence
               </>
             )}
-          </button>
+          </Button>
         </div>
 
         {result && (
@@ -152,9 +157,9 @@ export default function AnalysisWorkspace() {
 
 function Metric({ label, value }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <Card className="rounded-xl border-white/10 bg-white/[0.02] p-4 shadow-none">
       <p className="text-xs text-white/40">{label}</p>
       <p className="mt-1 text-xl font-medium">{value}</p>
-    </div>
+    </Card>
   );
 }

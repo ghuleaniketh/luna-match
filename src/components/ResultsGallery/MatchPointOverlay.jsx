@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Target, Filter, Eye, CheckCircle } from 'lucide-react';
+import { Target } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 
 export default function MatchPointOverlay({ sourceImage, referenceImage, matchPoints = [] }) {
   const [hoveredPointId, setHoveredPointId] = useState(null);
@@ -9,14 +12,14 @@ export default function MatchPointOverlay({ sourceImage, referenceImage, matchPo
   const filteredPoints = matchPoints.filter(p => p.confidence >= minConfidence);
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-md flex flex-col h-full">
+    <Card className="flex h-full flex-col rounded-2xl border-slate-800/80 bg-slate-900/60 p-5 shadow-none">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-orange-400" />
           <h4 className="font-semibold text-sm text-slate-100">Dual-Image Keypoint Correspondence</h4>
-          <span className="px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 text-xs font-mono border border-cyan-800/50">
+          <Badge className="font-mono">
             {filteredPoints.length} inliers
-          </span>
+          </Badge>
         </div>
 
         <div className="flex items-center gap-4 text-xs font-mono">
@@ -33,14 +36,16 @@ export default function MatchPointOverlay({ sourceImage, referenceImage, matchPo
             />
           </label>
 
-          <button
+          <Button
+            type="button"
+            size="sm"
             onClick={() => setShowConnectors(!showConnectors)}
-            className={`px-2 py-1 rounded text-xs border transition-colors cursor-pointer ${
+            className={`cursor-pointer ${
               showConnectors ? 'bg-cyan-950 text-cyan-300 border-cyan-700' : 'bg-slate-800 text-slate-400 border-slate-700'
             }`}
           >
             {showConnectors ? 'Lines ON' : 'Lines OFF'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -50,17 +55,17 @@ export default function MatchPointOverlay({ sourceImage, referenceImage, matchPo
           {/* Left: Source Image */}
           <div className="relative border-r border-slate-800/80">
             <img src={sourceImage} alt="Source Orbit" className="w-full h-full object-cover" />
-            <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur px-2 py-0.5 rounded text-[10px] text-cyan-400 font-mono border border-cyan-500/30">
+            <Badge className="absolute left-3 top-3 bg-slate-950/80 px-2 py-0.5 font-mono text-[10px]">
               Source Keypoints
-            </div>
+            </Badge>
           </div>
 
           {/* Right: Reference Image */}
           <div className="relative">
             <img src={referenceImage} alt="Reference Base" className="w-full h-full object-cover" />
-            <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur px-2 py-0.5 rounded text-[10px] text-orange-400 font-mono border border-orange-500/30">
+            <Badge variant="warning" className="absolute right-3 top-3 px-2 py-0.5 font-mono text-[10px]">
               Reference Keypoints
-            </div>
+            </Badge>
           </div>
 
           {/* Global SVG Overlay for Match Lines and Feature Keypoint Rings */}
@@ -131,7 +136,7 @@ export default function MatchPointOverlay({ sourceImage, referenceImage, matchPo
             })}
           </svg>
         </div>
-      </div>
+       </div>
 
       {/* Point details footer */}
       <div className="mt-3 flex items-center justify-between text-xs text-slate-400 font-mono">
@@ -144,6 +149,6 @@ export default function MatchPointOverlay({ sourceImage, referenceImage, matchPo
         )}
         <span className="text-slate-500">LunaNet-Transformer Descriptor</span>
       </div>
-    </div>
+    </Card>
   );
 }

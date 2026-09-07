@@ -1,14 +1,16 @@
 import React from 'react';
-import { MessageSquare, Bot, Sparkles, X } from 'lucide-react';
+import { Bot, X } from 'lucide-react';
+import { Button } from '../ui/button';
 
 export default function ChatToggle({ isOpen, onToggle, unreadCount = 1 }) {
   return (
-    <button
+    <Button
       onClick={onToggle}
-      className={`fixed bottom-6 right-6 z-50 p-4 rounded-2xl shadow-2xl transition-all duration-300 flex items-center gap-3 cursor-pointer group ${
+      variant={isOpen ? 'secondary' : 'default'}
+      className={`group fixed bottom-6 right-6 z-50 rounded-2xl p-4 shadow-2xl transition-all duration-300 ${
         isOpen
-          ? 'bg-slate-800 text-slate-200 border border-slate-700'
-          : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold glow-cyan hover:scale-105 active:scale-95'
+          ? 'border-slate-700 bg-slate-800 text-slate-200'
+          : 'bg-gradient-to-r from-cyan-500 to-blue-600 font-bold text-slate-950 glow-cyan hover:scale-105 active:scale-95'
       }`}
       aria-label="Toggle AI Assistant"
     >
@@ -26,6 +28,6 @@ export default function ChatToggle({ isOpen, onToggle, unreadCount = 1 }) {
           <span className="text-sm font-bold tracking-wide">Ask Luna-Copilot</span>
         </>
       )}
-    </button>
+    </Button>
   );
 }

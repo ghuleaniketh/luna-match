@@ -1,5 +1,4 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Sliders,
   Sparkles,
@@ -9,6 +8,9 @@ import {
   Check,
   Loader2
 } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import { Card } from '../ui/card';
+import { Separator } from '../ui/separator';
 
 const ICON_MAP = {
   Sliders,
@@ -24,11 +26,11 @@ export default function PipelineVisualizer({ stages, currentStageIndex, status }
 
   return (
     <section id="pipeline" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="bg-slate-950/70 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl relative overflow-hidden shadow-2xl">
+      <Card className="relative overflow-hidden rounded-3xl border-slate-800 p-6 shadow-2xl sm:p-8">
         {/* Subtle background glow */}
         <div className="absolute top-0 right-1/4 w-96 h-40 bg-cyan-500/5 blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-800/80 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
@@ -42,24 +44,25 @@ export default function PipelineVisualizer({ stages, currentStageIndex, status }
           <div className="flex items-center gap-3">
             <span className="text-xs font-mono text-slate-400">Status:</span>
             {isProcessing && (
-              <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 animate-pulse">
+              <Badge className="animate-pulse gap-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Stage {currentStageIndex + 1} of {stages.length}: {stages[currentStageIndex]?.name}
-              </span>
+              </Badge>
             )}
             {isCompleted && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40">
+              <Badge variant="success" className="gap-1.5">
                 <Check className="w-3.5 h-3.5" />
                 Pipeline Verified & Aligned
-              </span>
+              </Badge>
             )}
             {status === 'idle' && (
-              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-900 text-slate-400 border border-slate-800">
+              <Badge variant="muted">
                 Awaiting Execution
-              </span>
+              </Badge>
             )}
           </div>
         </div>
+        <Separator className="mb-6" />
 
         {/* 5-Stage Stepper Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 relative">
@@ -67,8 +70,6 @@ export default function PipelineVisualizer({ stages, currentStageIndex, status }
             const IconComponent = ICON_MAP[stage.icon] || Sparkles;
             const isCurrent = isProcessing && currentStageIndex === idx;
             const isDone = isCompleted || (isProcessing && currentStageIndex > idx);
-            const isPending = !isDone && !isCurrent;
-
             return (
               <div
                 key={stage.id}
@@ -133,7 +134,7 @@ export default function PipelineVisualizer({ stages, currentStageIndex, status }
             );
           })}
         </div>
-      </div>
+      </Card>
     </section>
   );
 }
