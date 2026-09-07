@@ -1,16 +1,138 @@
-# React + Vite
+# 🌙 LUNA-MATCH: AI Layer
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> **Smart India Hackathon 2026 (SIH26166)**:  
+> *Multi-modal, Sun angle and scale invariant image correspondence using Chandrayaan-2 optical images (OHRC, TMC and IIRS)*
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🏛️ System Architecture
 
-## React Compiler
+```text
+                         USER
+                           |
+                           v
+                     CHATBOT / UI
+                           |
+                           v
+                    QWEN3-VL-8B
+                         VLM
+                    /             \
+                   /               \
+                  v                 v
+                 RAG          ORCHESTRATOR
+                                   |
+                                   v
+                              CORE ML API
+                                   |
+                                   v
+                          REGISTRATION ENGINE
+                                   |
+                                   v
+                                RESULTS
+                                   |
+                     +-------------+-------------+
+                     |                           |
+                     v                           v
+              Registered Image              JSON Metrics
+              Match Points                  RMSE
+              Overlay                       Inlier Count
+                                            Inlier Ratio
+                                            Sub-pixel Accuracy
+                     |                           |
+                     +-------------+-------------+
+                                   |
+                                   v
+                           QWEN3-VL-8B
+                         RESULT INTERPRETATION
+                                   |
+                                   v
+                            FINAL RESPONSE
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Core Architectural Principle
+- **Core ML Registration Engine**: The absolute ground truth for feature detection (SIFT/ORB/SuperPoint), RANSAC outlier filtering, spatial homogenization, transformation matrices, RMSE, inlier ratio, and sub-pixel registration accuracy.
+- **AI Layer**: Responsible for multimodal visual perception (**Qwen/Qwen3-VL-8B-Instruct**), grounded scientific domain retrieval (**RAG**), tool orchestration, natural language explanation, and UI presentation without hallucinating metrics.
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## 📂 Project Structure
+
+```text
+d:/luna-match-main/
+│
+├── app/
+│   ├── config.py                  # Typed settings (Pydantic BaseSettings)
+│   ├── main.py                    # FastAPI server entrypoint
+│   │
+│   ├── vlm/                       # Modular VLM client & vision layer
+│   │   ├── client.py              # Base / OpenAI-compatible / Transformers / Mock clients
+│   │   ├── vision.py              # Visual question answering & overlay explanation
+│   │   └── prompts.py             # Grounded system prompts
+│   │
+│   ├── rag/                       # Grounded Planetary Knowledge RAG
+│   │   ├── chunking.py            # Markdown/PDF chunker with metadata retention
+│   │   ├── embeddings.py          # Sentence-transformers embedding wrapper
+│   │   ├── vectorstore.py         # FAISS vector store with disk persistence
+│   │   ├── retriever.py           # Top-K retrieval with citation formatting
+│   │   └── ingest.py              # Knowledge ingestion CLI
+│   │
+│   ├── orchestrator/              # Intent classification and tool routing
+│   │   ├── agent.py               # Orchestrator agent
+│   │   └── tools.py               # Clean Python tool interfaces
+│   │
+│   ├── core_api/                  # Core ML Engine interface
+│   │   ├── client.py              # Abstract & HTTP Core ML client
+│   │   └── mock_client.py         # Structural mock client for isolated testing
+│   │
+│   └── chatbot/
+│       └── ui.py                  # Streamlit application
+│
+├── knowledge/                     # Authoritative Lunar & Mission Knowledge Base
+│   ├── isro/                      # Chandrayaan-2 mission overview & objectives
+│   ├── ohrc/                      # Orbiter High Resolution Camera specs (0.25-0.32m)
+│   ├── tmc2/                      # Terrain Mapping Camera-2 specs (5m, Triplet Stereo)
+│   ├── iirs/                      # Imaging Infrared Spectrometer (0.8-5.0um hyperspectral)
+│   ├── lro/                       # LROC Narrow Angle Camera reference (0.5m)
+│   ├── registration/              # SIFT/ORB, RANSAC, RMSE, Inlier Ratio, Sub-pixel accuracy
+│   └── sih/                       # SIH26166 problem statement details
+│
+├── data/
+│   ├── index/                     # Persistent FAISS index & metadata
+│   └── sample_images/             # Lunar test imagery
+│
+├── tests/
+│   └── test_rag.py                # Automated RAG unit & integration tests
+│
+├── .env.example
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## 🚀 Quick Start (Phase 1 & Phase 2)
+
+### 1. Ingest Lunar Knowledge Base
+Build and persist the local vector embeddings into `data/index/`:
+```bash
+python -m app.rag.ingest
+```
+
+### 2. Query the Knowledge Base (CLI)
+Test retrieval and ground truth extraction directly from the command line:
+```bash
+python -m app.rag.retriever --query "What is OHRC?"
+python -m app.rag.retriever --query "What does RMSE mean in image registration?"
+python -m app.rag.retriever --query "Why is uniform distribution of match points important?"
+```
+
+### 3. Run Automated Unit Tests
+```bash
+pytest tests/test_rag.py -v
+```
+
+### 4. Start FastAPI Backend
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+Interactive API docs available at: `http://localhost:8000/docs`.
