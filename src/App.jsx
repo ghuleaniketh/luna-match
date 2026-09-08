@@ -1,5 +1,7 @@
+
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import WebsiteLoader from './components/Loader/WebsiteLoader';
 import Hero from './components/Hero/Hero';
 import Convergence from './components/Convergence/Convergence';
 import AboutImages from './components/AboutImages/AboutImages';
@@ -9,11 +11,28 @@ import ChatToggle from './components/Chatbot/ChatToggle';
 import SiteLoader from './components/ui/SiteLoader';
 
 export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+  useEffect(() => {
+    const handleLoad = () => {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1200);
+    };
+
+    if (document.readyState === 'complete') {
+      handleLoad();
+    } else {
+      window.addEventListener('load', handleLoad);
+      return () => window.removeEventListener('load', handleLoad);
+    }
+  }, []);
 
   return (
     <div className="relative flex min-h-screen flex-col bg-[#09090b] text-zinc-100">
       <SiteLoader />
+
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden space-grid"
