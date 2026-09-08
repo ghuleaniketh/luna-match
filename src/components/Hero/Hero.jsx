@@ -78,19 +78,6 @@ export default function Hero() {
           <div className="lg:col-span-5 flex items-center justify-center lg:justify-end relative min-h-[420px] h-[450px] sm:h-[540px] lg:h-[620px] w-full lg:translate-x-12">
             {/* Glow behind moon */}
             <div className="absolute w-72 h-72 sm:w-96 sm:h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
-            <motion.img
-              src="/Satellite.png"
-              alt="Satellite approaching the moon"
-              className="pointer-events-none absolute right-0 top-0 z-20 w-24 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)] sm:right-0 sm:top-0 sm:w-28 md:w-32 lg:right-0 lg:top-0"
-              animate={{ y: [0, -8, 0], rotate: [-12, -10, -12] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.span
-              aria-hidden="true"
-              className="pointer-events-none absolute right-24 top-28 z-30 h-3 w-3 rounded-full bg-cyan-200 shadow-[0_0_18px_6px_rgba(103,232,249,0.7)] sm:right-32 sm:top-36 md:right-36"
-              animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.15, 0.8] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-            />
             <div className="w-full h-full relative z-10">
               <MoonModel />
             </div>
