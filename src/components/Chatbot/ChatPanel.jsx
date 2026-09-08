@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, BookOpen, ChevronDown, ChevronUp, CircleHelp, Cpu, Eye, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { checkHealth, sendChat } from '../../api/lunaMatch';
+import { checkHealth, getChatHistory, sendChat } from '../../api/lunaMatch';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import RegistrationResultCard from './RegistrationResultCard';
@@ -22,7 +22,7 @@ function createMessage(sender, text, extra = {}) {
   return { id: `${sender}-${Date.now()}-${Math.random()}`, sender, text, timestamp: sender === 'user' ? 'Just now' : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), ...extra };
 }
 
-export default function ChatPanel({ isOpen, onClose, sourceImage = null, referenceImage = null }) {
+export default function ChatPanel({ isOpen, onClose, sourceImage = null, referenceImage = null, jobId = null }) {
   const [messages, setMessages] = useState([
     createMessage('bot', "Hello! I'm LUNA AI.\n\nI can answer lunar science questions, explain registration results, and analyze the images selected in the workspace.", { id: 'welcome', timestamp: 'Ready now' }),
   ]);
@@ -35,8 +35,22 @@ export default function ChatPanel({ isOpen, onClose, sourceImage = null, referen
 
   useEffect(() => {
     if (!isOpen || backendOnline !== null) return;
-    checkHealth().then((data) => setBackendOnline(data?.status === 'online'));
+    checkHealth().then((data) => setBackendOnline(data?.status === 'ok'));
   }, [isOpen, backendOnline]);
+
+  useEffect(() => {
+    if (!isOpen || !jobId) return;
+    getChatHistory(jobId)
+      .then((history) => {
+        const restored = (history.history || []).map((message, index) => createMessage(
+          message.role === 'user' ? 'user' : 'bot',
+          message.content,
+          { id: `history-${jobId}-${index}`, timestamp: 'Earlier' },
+        ));
+        if (restored.length) setMessages(restored);
+      })
+      .catch(() => setBackendOnline(false));
+  }, [isOpen, jobId]);
 
   useEffect(() => {
     if (isOpen && !isMinimized) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -51,7 +65,7 @@ export default function ChatPanel({ isOpen, onClose, sourceImage = null, referen
     setIsTyping(true);
 
     try {
-      const result = await sendChat(query, attachment?.dataUrl || sourceImage, referenceImage);
+      const result = await sendChat(query, attachment?.dataUrl || sourceImage, referenceImage, { jobId });
       setMessages((current) => [...current, createMessage('bot', result.text_response, {
         intent: result.intent,
         sources: result.sources || [],

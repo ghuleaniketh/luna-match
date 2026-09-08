@@ -1,135 +1,147 @@
 /**
  * LUNA-MATCH API abstraction layer.
- * Calls the real FastAPI backend (app/main.py).
- * Falls back gracefully to mock data when the backend is unreachable.
+ * Uses the production registration job API as the only source of result data.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://lunarcoreengine.onrender.com').replace(/\/$/, '');
+const POLL_INTERVAL_MS = 1000;
+const POLL_TIMEOUT_MS = 120000;
 
-// ── helpers ────────────────────────────────────────────────────────────────
-async function _postJSON(path, body) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+async function parseResponse(res) {
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || `HTTP ${res.status}`);
+    const error = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(error.detail || `HTTP ${res.status}`);
   }
+  return res;
+}
+
+async function getJSON(path) {
+  const res = await parseResponse(await fetch(`${BASE_URL}${path}`));
   return res.json();
 }
 
-// ── health check ──────────────────────────────────────────────────────────
+async function postJSON(path, body) {
+  const res = await parseResponse(await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }));
+  return res.json();
+}
+
+function dataUriToBlob(dataUri, fallbackName) {
+  if (dataUri instanceof Blob) return dataUri;
+  if (typeof dataUri !== 'string' || !dataUri.startsWith('data:')) {
+    throw new Error(`Invalid image supplied for ${fallbackName}`);
+  }
+
+  const [metadata, encoded] = dataUri.split(',');
+  const mimeType = metadata.match(/data:(.*?);base64/)?.[1] || 'application/octet-stream';
+  const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+  return new File([bytes], fallbackName, { type: mimeType });
+}
+
+async function registerImages(sourceImg, referenceImg) {
+  const formData = new FormData();
+  formData.append('img_a', dataUriToBlob(sourceImg, 'source-image'));
+  formData.append('img_b', dataUriToBlob(referenceImg, 'reference-image'));
+
+  const res = await parseResponse(await fetch(`${BASE_URL}/register`, {
+    method: 'POST',
+    body: formData,
+  }));
+  return res.json();
+}
+
+async function waitForJob(jobId) {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < POLL_TIMEOUT_MS) {
+    const status = await getJSON(`/jobs/${encodeURIComponent(jobId)}`);
+    if (status.status === 'DONE') return status;
+    if (['FAILED', 'ERROR'].includes(status.status)) {
+      throw new Error(`Registration job ${status.status.toLowerCase()}`);
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+
+  throw new Error('Registration timed out while waiting for the backend');
+}
+
+function previewUrl(jobId, kind) {
+  return `${BASE_URL}/jobs/${encodeURIComponent(jobId)}/preview?kind=${kind}`;
+}
+
+function normalizeSummary(jobId, sourceImg, referenceImg, summary) {
+  const apiMetrics = summary.metrics || {};
+  const quality = summary.quality_assessment || {};
+  const metrics = {
+    rmse: apiMetrics.rmse_px ?? apiMetrics.rmse ?? null,
+    inlier_ratio: apiMetrics.inlier_ratio ?? null,
+    inliers: apiMetrics.n_inliers ?? apiMetrics.inliers ?? null,
+    total_matches: apiMetrics.total_matches ?? apiMetrics.n_matches ?? null,
+    subpixel_accuracy: apiMetrics.subpixel_accuracy ?? null,
+    subpixel_error: apiMetrics.subpixel_error ?? null,
+    sdi: apiMetrics.sdi ?? null,
+    grade: quality.grade,
+    confidence_label: quality.confidence_label,
+  };
+
+  return {
+    success: true,
+    jobId,
+    timestamp: summary.timestamp || null,
+    sessionId: jobId,
+    sourceImage: sourceImg,
+    referenceImage: referenceImg,
+    registeredImage: previewUrl(jobId, 'checkerboard'),
+    overlayImage: previewUrl(jobId, 'residual'),
+    matchPointsImage: previewUrl(jobId, 'tiepoints'),
+    metrics,
+    aiExplanation: quality.reasoning || '',
+    warnings: quality.warnings || [],
+    qualityAssessment: quality,
+    sources: summary.sources || [],
+    pipelineLogs: summary.pipeline_logs || [],
+  };
+}
+
 export async function checkHealth() {
   try {
-    const res = await fetch(`${BASE_URL}/health`);
-    return res.ok ? res.json() : null;
+    return await getJSON('/health');
   } catch {
     return null;
   }
 }
 
-// ── RAG knowledge query ───────────────────────────────────────────────────
-export async function queryKnowledge(query, topK = 4) {
-  return _postJSON('/rag/query', { query, top_k: topK });
-}
-
-// ── Orchestrated chat (main AI endpoint) ─────────────────────────────────
-/**
- * Send a message to the AI Orchestrator.
- * @param {string} query - User text message
- * @param {string|null} sourceImageB64 - Base64 data URI of source image (optional)
- * @param {string|null} referenceImageB64 - Base64 data URI of reference image (optional)
- */
-export async function sendChat(query, sourceImageB64 = null, referenceImageB64 = null) {
-  return _postJSON('/orchestrate', {
-    query,
-    source_image_b64: sourceImageB64,
-    reference_image_b64: referenceImageB64,
-  });
-}
-
-// ── Image Registration (mock-friendly) ───────────────────────────────────
-/**
- * Run image registration pipeline.
- * Accepts base64 data URI strings (data:image/...).
- * Falls back to deterministic mock if backend unreachable.
- */
-export async function runCorrespondence(sourceImg, referenceImg, options = {}) {
-  // Try real backend first via /orchestrate
-  try {
-    const result = await _postJSON('/orchestrate', {
-      query: 'Register these two images and explain the result.',
-      source_image_b64: sourceImg || null,
-      reference_image_b64: referenceImg || null,
-    });
-
-    // Map orchestrator response to the shape the UI expects
-    const reg = result.registration_result || {};
-    return {
-      success: reg.status !== 'failed',
-      jobId: 'job_' + Math.random().toString(36).substring(2, 9),
-      timestamp: new Date().toISOString(),
-      isSameLocation: true,
-      sourceImage: sourceImg,
-      referenceImage: referenceImg,
-      registeredImage: reg.registered_image || referenceImg,
-      overlayImage: reg.overlay_image || null,
-      matchPointsImage: reg.match_points_image || null,
-      metrics: {
-        rmse: reg.rmse ?? 0.42,
-        inlier_ratio: reg.inlier_ratio ?? 0.789,
-        inliers: reg.inliers ?? 312,
-        total_matches: reg.total_matches ?? 415,
-        subpixel_accuracy: reg.subpixel_accuracy ?? true,
-        subpixel_error: reg.subpixel_error ?? 0.31,
-      },
-      aiExplanation: result.text_response || '',
-      sources: result.sources || [],
-      pipelineLogs: _buildPipelineLogs(reg),
-    };
-  } catch (_err) {
-    // Backend unreachable → fall back to mock
-    console.warn('[lunaMatch] Backend unreachable, using mock data:', _err.message);
-    return _mockRegistration(sourceImg, referenceImg);
+export async function sendChat(query, _sourceImage = null, _referenceImage = null, options = {}) {
+  if (!options.jobId) {
+    throw new Error('Complete an image registration before starting result chat.');
   }
-}
 
-// ── Deterministic mock (offline / demo mode) ──────────────────────────────
-function _buildPipelineLogs(reg) {
-  return [
-    { step: 1, name: 'Preprocess', status: 'completed', durationMs: 240, info: 'Adaptive CLAHE & Sobel lunar gradient enhancement' },
-    { step: 2, name: 'Feature Extraction', status: 'completed', durationMs: 520, info: `Detected ${reg.total_matches || 2048} multi-scale keypoints via LunaNet-Transformer` },
-    { step: 3, name: 'Correspondence', status: 'completed', durationMs: 680, info: 'Coarse-to-fine Sinkhorn dual-softmax matching' },
-    { step: 4, name: 'Geometric Verification', status: 'completed', durationMs: 410, info: `USAC-MAGSAC homography fitted — ${reg.inliers || 312} inliers / ${reg.total_matches || 415} matches` },
-    { step: 5, name: 'Sub-pixel Refinement', status: 'completed', durationMs: 350, info: `Lucas-Kanade optical flow warp — RMSE ${reg.rmse?.toFixed(3) || '0.420'} px` },
-  ];
-}
+  const result = await postJSON('/chat', {
+    job_id: options.jobId,
+    session_id: options.sessionId || options.jobId,
+    message: query,
+  });
 
-function _mockRegistration(sourceImg, referenceImg) {
   return {
-    success: true,
-    jobId: 'mock_' + Math.random().toString(36).substring(2, 9),
-    timestamp: new Date().toISOString(),
-    isSameLocation: true,
-    sourceImage: sourceImg,
-    referenceImage: referenceImg,
-    registeredImage: referenceImg,
-    overlayImage: null,
-    matchPointsImage: null,
-    metrics: {
-      rmse: 0.42,
-      inlier_ratio: 0.789,
-      inliers: 312,
-      total_matches: 415,
-      subpixel_accuracy: true,
-      subpixel_error: 0.31,
-    },
-    aiExplanation:
-      'Registration completed successfully. RMSE of 0.42 pixels indicates sub-pixel precision alignment, ' +
-      'with 78.9% inlier ratio demonstrating robust geometric consistency across illumination-variant lunar terrain.',
-    sources: [],
-    pipelineLogs: _buildPipelineLogs({}),
+    text_response: result.reply || '',
+    sources: result.sources || [],
+    sessionId: result.session_id || options.sessionId || options.jobId,
   };
+}
+
+export async function getChatHistory(jobId) {
+  return getJSON(`/chat/${encodeURIComponent(jobId)}/history`);
+}
+
+export async function runCorrespondence(sourceImg, referenceImg) {
+  const registration = await registerImages(sourceImg, referenceImg);
+  const jobId = registration.job_id;
+  if (!jobId) throw new Error('Registration response did not include a job ID');
+
+  await waitForJob(jobId);
+  const summary = await getJSON(`/jobs/${encodeURIComponent(jobId)}/summary`);
+  return normalizeSummary(jobId, sourceImg, referenceImg, summary);
 }
