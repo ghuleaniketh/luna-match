@@ -6,7 +6,6 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
-import ResultsGallery from "../ResultsGallery/ResultsGallery";
 
 function ImageBox({ label, image, onSelect, onClear }) {
   const inputRef = useRef(null);
@@ -68,7 +67,7 @@ function ImageBox({ label, image, onSelect, onClear }) {
   );
 }
 
-export default function AnalysisWorkspace({ onImagesChange, onRegistration }) {
+export default function AnalysisWorkspace({ onImagesChange }) {
   const sectionRef = useRef(null);
   const inView = useInView(sectionRef, { once: false, amount: 0.15 });
   const [imageOne, setImageOne] = useState(null);
@@ -86,9 +85,13 @@ export default function AnalysisWorkspace({ onImagesChange, onRegistration }) {
     try {
       setAnalysisPhase("Estimating alignment");
       const data = await runCorrespondence(imageOne, imageTwo);
-      onRegistration?.(data);
       setAnalysisPhase("Complete");
-      setResult(data);
+      setResult({
+        matches: data.metrics.total_matches,
+        inliers: data.metrics.inliers,
+        rmse: data.metrics.rmse,
+        transform: "Homography",
+      });
     } catch (error) {
       setAnalysisPhase(error.message || "Analysis failed");
     } finally {
@@ -184,9 +187,23 @@ export default function AnalysisWorkspace({ onImagesChange, onRegistration }) {
         </div>
 
         {result && (
-          <ResultsGallery result={result} isVisible />
+          <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <Metric label="Matches" value={result.matches} />
+            <Metric label="Inliers" value={result.inliers} />
+            <Metric label="RMSE" value={result.rmse} />
+            <Metric label="Model" value={result.transform} />
+          </div>
         )}
       </div>
     </motion.section>
+  );
+}
+
+function Metric({ label, value }) {
+  return (
+    <Card className="rounded-xl border-white/10 bg-white/[0.02] p-4 shadow-none">
+      <p className="text-xs text-white/40">{label}</p>
+      <p className="mt-1 text-xl font-medium">{value}</p>
+    </Card>
   );
 }

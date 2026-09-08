@@ -12,7 +12,6 @@ import Footer from './components/Footer/Footer';
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatImages, setChatImages] = useState({ source: null, reference: null });
-  const [jobId, setJobId] = useState(null);
   const [isSiteReady, setIsSiteReady] = useState(false);
 
   return (
@@ -27,10 +26,7 @@ export default function App() {
         <Hero />
         <Convergence />
         <AboutImages />
-        <AnalysisWorkspace
-          onImagesChange={setChatImages}
-          onRegistration={(result) => setJobId(result?.jobId || null)}
-        />
+        <AnalysisWorkspace onImagesChange={setChatImages} />
       </main>
       <Footer />
 
@@ -41,7 +37,6 @@ export default function App() {
             onClose={() => setIsChatOpen(false)}
             sourceImage={chatImages.source}
             referenceImage={chatImages.reference}
-            jobId={jobId}
           />
         )}
       </AnimatePresence>

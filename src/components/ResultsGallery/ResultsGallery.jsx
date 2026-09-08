@@ -52,8 +52,8 @@ export default function ResultsGallery({ result, isVisible }) {
 
   const { metrics = {}, aiExplanation = '', sources = [], pipelineLogs = [] } = result;
 
-  const rmseGood = metrics.rmse != null && metrics.rmse < 0.5;
-  const inlierGood = metrics.inlier_ratio != null && metrics.inlier_ratio > 0.6;
+  const rmseGood = (metrics.rmse ?? 1) < 0.5;
+  const inlierGood = (metrics.inlier_ratio ?? 0) > 0.6;
 
   const tabs = [
     { id: 'registered', label: 'Registered', icon: <Layers className="w-3 h-3" /> },
@@ -92,9 +92,7 @@ export default function ResultsGallery({ result, isVisible }) {
           <p className="text-sm font-semibold">
             {result.success ? 'Registration Successful — Sub-pixel Precision Achieved' : 'Registration Failed'}
           </p>
-          <p className="text-xs opacity-70 font-mono mt-0.5">
-            Job {result.jobId}{result.timestamp ? ` · ${new Date(result.timestamp).toLocaleTimeString()}` : ''}
-          </p>
+          <p className="text-xs opacity-70 font-mono mt-0.5">Job {result.jobId} · {new Date(result.timestamp).toLocaleTimeString()}</p>
         </div>
         {result.success && (
           <button className="ml-auto flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-900/50 hover:bg-emerald-800/50 border border-emerald-700/50 transition-colors cursor-pointer">
@@ -114,14 +112,14 @@ export default function ResultsGallery({ result, isVisible }) {
         />
         <MetricCard
           label="Inlier Ratio"
-          value={metrics.inlier_ratio == null ? '—' : `${(metrics.inlier_ratio * 100).toFixed(1)}%`}
+          value={`${((metrics.inlier_ratio ?? 0) * 100).toFixed(1)}%`}
           good={inlierGood}
           tooltip="Fraction of RANSAC-verified inlier matches. > 60% is considered reliable."
         />
         <MetricCard
           label="Inliers"
           value={metrics.inliers ?? '—'}
-          good={metrics.inliers != null && metrics.inliers > 100}
+          good={(metrics.inliers ?? 0) > 100}
           tooltip="Number of geometrically consistent match points after RANSAC outlier rejection."
         />
         <MetricCard
@@ -132,8 +130,8 @@ export default function ResultsGallery({ result, isVisible }) {
         />
         <MetricCard
           label="Sub-pixel"
-          value={metrics.subpixel_accuracy == null ? '—' : metrics.subpixel_accuracy ? 'YES' : 'NO'}
-          good={metrics.subpixel_accuracy === true}
+          value={metrics.subpixel_accuracy ? 'YES' : 'NO'}
+          good={metrics.subpixel_accuracy ?? false}
           tooltip="Whether final RMSE is below 0.5 pixels after Lucas-Kanade refinement."
         />
       </div>
