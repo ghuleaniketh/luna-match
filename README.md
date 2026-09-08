@@ -146,3 +146,15 @@ pytest tests/test_rag.py -v
 uvicorn app.main:app --reload --port 8000
 ```
 Interactive API docs available at: `http://localhost:8000/docs`.
+
+### 6. Deploy the FastAPI Backend on Render
+
+This repository includes `render.yaml` and `requirements-api.txt` for a lightweight Groq-backed deployment.
+
+1. Push the repository to GitHub and open [Render](https://render.com/).
+2. Choose **New > Blueprint**, select this repository, and deploy `render.yaml`.
+3. In the Render service environment, set `GROQ_API_KEY` to the Groq API key. Keep `VLM_BACKEND=groq` and `CORE_ML_USE_MOCK=true` for the current setup.
+4. Verify the backend at `https://<render-service>.onrender.com/health`.
+5. In Vercel, add `VITE_API_BASE_URL=https://<render-service>.onrender.com`, then redeploy the frontend.
+
+Do not commit `.env` or API keys. Render's free service may sleep when idle, so the first request after inactivity can take a little longer.
