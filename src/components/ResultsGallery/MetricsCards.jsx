@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Target, Gauge, ShieldCheck, GitCompare } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
@@ -58,8 +58,25 @@ export default function MetricsCards({ metrics }) {
 }
 
 function MetricCard({ label, icon, className, children }) {
+  const [spotlight, setSpotlight] = useState(null);
+
   return (
-    <Card className={`group relative overflow-hidden rounded-2xl border-slate-800 bg-slate-900/70 p-4 shadow-none transition-all ${className}`}>
+    <Card
+      onMouseMove={(event) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        setSpotlight({
+          x: event.clientX - bounds.left,
+          y: event.clientY - bounds.top,
+        });
+      }}
+      onMouseLeave={() => setSpotlight(null)}
+      style={{
+        background: spotlight
+          ? `radial-gradient(220px circle at ${spotlight.x}px ${spotlight.y}px, rgba(56, 189, 248, 0.11), transparent 70%), rgba(15, 23, 42, 0.7)`
+          : undefined,
+      }}
+      className={`group relative overflow-hidden rounded-2xl border-slate-800 bg-slate-900/70 p-4 shadow-none ${className}`}
+    >
       <div className="mb-2 flex items-center justify-between text-slate-400">
         <span className="font-mono text-xs uppercase tracking-wider">{label}</span>
         {icon}

@@ -30,7 +30,7 @@ export const Button = forwardRef(function Button(
     <Component
       ref={ref}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 disabled:pointer-events-none disabled:opacity-40",
+        "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-[transform,background-color,border-color,box-shadow,color] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 disabled:pointer-events-none disabled:opacity-40",
         buttonVariants[variant],
         buttonSizes[size],
         className,

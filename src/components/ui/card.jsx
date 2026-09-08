@@ -6,7 +6,7 @@ export const Card = forwardRef(function Card({ className, ...props }, ref) {
     <div
       ref={ref}
       className={cn(
-        "rounded-xl border border-zinc-800/90 bg-zinc-950/75 text-zinc-100 shadow-lg shadow-black/20 backdrop-blur-xl",
+        "rounded-xl border border-zinc-800/90 bg-zinc-950/75 text-zinc-100 shadow-lg shadow-black/20 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-zinc-700/90",
         className,
       )}
       {...props}
