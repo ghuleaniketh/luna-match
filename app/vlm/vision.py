@@ -71,9 +71,14 @@ class LunarVisionEngine:
             "rmse": 0.0,
             "subpixel_accuracy": False,
         }
+        metrics_dict = {
+            key: metrics_dict.get(key)
+            for key in ("status", "total_matches", "inliers", "outliers", "inlier_ratio", "rmse", "subpixel_error", "subpixel_accuracy")
+            if key in metrics_dict
+        }
         metrics_json = json.dumps(metrics_dict, indent=2)
         question = user_question or "Is this image registration reliable and well aligned?"
-        context = rag_context or "No additional scientific literature retrieved."
+        context = (rag_context or "No additional scientific literature retrieved.")[:3000]
 
         prompt = REGISTRATION_EXPLANATION_PROMPT.format(
             metrics_json=metrics_json,
@@ -82,18 +87,25 @@ class LunarVisionEngine:
         )
 
         # Collect available images
-        images = []
-        if source_image is not None:
-            images.append(source_image)
-        if reference_image is not None:
-            images.append(reference_image)
         if overlay_image is not None:
-            images.append(overlay_image)
+            images = [overlay_image]
+        else:
+            images = [image for image in (source_image, reference_image) if image is not None]
 
-        return self.client.generate(
+        response = self.client.generate(
             prompt=prompt,
             images=images if images else None,
         )
+        measured_summary = (
+            f"Overlay inspection. Measured metrics: inliers={metrics_dict.get('inliers', 'n/a')}, "
+            f"inlier_ratio={metrics_dict.get('inlier_ratio', 'n/a')}"
+            f" ({metrics_dict.get('inlier_ratio', 0) * 100:.1f}%), "
+            f"RMSE={metrics_dict.get('rmse', 'n/a')}, "
+            f"subpixel_accuracy={metrics_dict.get('subpixel_accuracy', 'n/a')}."
+        )
+        if not any(str(value) in response for value in metrics_dict.values() if value is not None):
+            return f"{measured_summary}\n\n{response}"
+        return response
 
     def answer_visual_question(
         self,

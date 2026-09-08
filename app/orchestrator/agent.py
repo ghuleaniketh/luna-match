@@ -110,6 +110,11 @@ class LunaMatchOrchestrator:
                 f"Provide a clear, authoritative explanation with source attributions."
             )
             text_resp = self.tools.vision_engine.client.generate(prompt=prompt)
+            if text_resp.startswith("[Error communicating with VLM API endpoint"):
+                text_resp = (
+                    "The VLM synthesis service is temporarily unavailable. "
+                    "Here is the retrieved knowledge:\n\n" + rag_output["context"]
+                )
             return AgentResponse(
                 intent=intent,
                 text_response=text_resp,

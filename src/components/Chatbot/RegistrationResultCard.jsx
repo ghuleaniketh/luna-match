@@ -1,14 +1,9 @@
 import { CheckCircle2, ExternalLink, Image as ImageIcon, ShieldCheck } from 'lucide-react';
 
-const MOCK_RESULT = {
-  matches: '542',
-  inliers: '428',
-  ratio: '78.9%',
-  rmse: '0.42 px',
-  subpixel: '0.18 px'
-};
+export default function RegistrationResultCard({ result, onViewRegistered, onViewMatches }) {
+  const metrics = result || {};
+  const ratio = metrics.inlier_ratio == null ? 'n/a' : `${(metrics.inlier_ratio * 100).toFixed(1)}%`;
 
-export default function RegistrationResultCard({ onViewRegistered, onViewMatches }) {
   return (
     <div className="mt-3 rounded-xl border border-cyan-400/20 bg-cyan-950/20 p-3.5">
       <div className="flex items-start justify-between gap-3">
@@ -23,14 +18,14 @@ export default function RegistrationResultCard({ onViewRegistered, onViewMatches
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-y border-white/10 py-3 text-xs">
-        <Metric label="Candidate matches" value={MOCK_RESULT.matches} />
-        <Metric label="Inliers" value={MOCK_RESULT.inliers} />
-        <Metric label="Inlier ratio" value={MOCK_RESULT.ratio} />
-        <Metric label="RMSE" value={MOCK_RESULT.rmse} />
-        <Metric label="Sub-pixel error" value={MOCK_RESULT.subpixel} />
+        <Metric label="Candidate matches" value={metrics.total_matches ?? 'n/a'} />
+        <Metric label="Inliers" value={metrics.inliers ?? 'n/a'} />
+        <Metric label="Inlier ratio" value={ratio} />
+        <Metric label="RMSE" value={metrics.rmse == null ? 'n/a' : `${metrics.rmse} px`} />
+        <Metric label="Sub-pixel error" value={metrics.subpixel_error == null ? 'n/a' : `${metrics.subpixel_error} px`} />
       </div>
 
-      <p className="mt-2 text-[10px] leading-relaxed text-slate-500">Example UI data for the future registration response.</p>
+      <p className="mt-2 text-[10px] leading-relaxed text-slate-500">Metrics returned by the registration service.</p>
 
       <div className="mt-3 flex gap-2">
         <ResultAction onClick={onViewRegistered} icon={<ImageIcon size={12} />} label="Registered image" />

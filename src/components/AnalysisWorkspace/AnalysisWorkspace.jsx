@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { UploadCloud, X, Sparkles, Loader2, Check, Circle } from "lucide-react";
+import { runCorrespondence } from "../../api/lunaMatch";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
@@ -11,7 +12,9 @@ function ImageBox({ label, image, onSelect, onClear }) {
 
   const handleFile = (file) => {
     if (!file) return;
-    onSelect(URL.createObjectURL(file));
+    const reader = new FileReader();
+    reader.onload = () => onSelect(reader.result);
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -64,18 +67,7 @@ function ImageBox({ label, image, onSelect, onClear }) {
   );
 }
 
-// Placeholder for the real backend call — swap this out once ready.
-async function runCorrespondence(image1, image2) {
-  await new Promise((r) => setTimeout(r, 1800));
-  return {
-    matches: 128,
-    inliers: 96,
-    rmse: 1.42,
-    transform: "Homography",
-  };
-}
-
-export default function AnalysisWorkspace() {
+export default function AnalysisWorkspace({ onImagesChange }) {
   const sectionRef = useRef(null);
   const inView = useInView(sectionRef, { once: false, amount: 0.15 });
   const [imageOne, setImageOne] = useState(null);
@@ -90,12 +82,21 @@ export default function AnalysisWorkspace() {
     setIsRunning(true);
     setResult(null);
     setAnalysisPhase("Detecting common features");
-    await new Promise((resolve) => setTimeout(resolve, 550));
-    setAnalysisPhase("Estimating alignment");
-    const data = await runCorrespondence(imageOne, imageTwo);
-    setAnalysisPhase("Complete");
-    setResult(data);
-    setIsRunning(false);
+    try {
+      setAnalysisPhase("Estimating alignment");
+      const data = await runCorrespondence(imageOne, imageTwo);
+      setAnalysisPhase("Complete");
+      setResult({
+        matches: data.metrics.total_matches,
+        inliers: data.metrics.inliers,
+        rmse: data.metrics.rmse,
+        transform: "Homography",
+      });
+    } catch (error) {
+      setAnalysisPhase(error.message || "Analysis failed");
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -140,14 +141,26 @@ export default function AnalysisWorkspace() {
           <ImageBox
             label="Image 1"
             image={imageOne}
-            onSelect={setImageOne}
-            onClear={() => setImageOne(null)}
+            onSelect={(image) => {
+              setImageOne(image);
+              onImagesChange?.((current) => ({ ...current, source: image }));
+            }}
+            onClear={() => {
+              setImageOne(null);
+              onImagesChange?.((current) => ({ ...current, source: null }));
+            }}
           />
           <ImageBox
             label="Image 2"
             image={imageTwo}
-            onSelect={setImageTwo}
-            onClear={() => setImageTwo(null)}
+            onSelect={(image) => {
+              setImageTwo(image);
+              onImagesChange?.((current) => ({ ...current, reference: image }));
+            }}
+            onClear={() => {
+              setImageTwo(null);
+              onImagesChange?.((current) => ({ ...current, reference: null }));
+            }}
           />
         </div>
 

@@ -35,7 +35,7 @@ export default function ChatInput({ value, onChange, onSend, attachment, onAttac
           <Send size={15} />
         </button>
       </div>
-      <p className="mt-2 text-center text-[10px] text-slate-600">Frontend preview only · Attachments stay on this device</p>
+      <p className="mt-2 text-center text-[10px] text-slate-600">Images are sent to the configured LUNA-MATCH AI service with your message.</p>
     </div>
   );
 }

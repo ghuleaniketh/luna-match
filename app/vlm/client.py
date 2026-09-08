@@ -24,20 +24,35 @@ def clean_vlm_response(text: str) -> str:
 
 def encode_image_to_base64(image: Union[str, Path, Image.Image]) -> str:
     """Convert an image path or PIL Image to a base64 JPEG/PNG data URL."""
+    output_format = "PNG"
     if isinstance(image, (str, Path)):
-        image_path = Path(image)
-        if not image_path.exists():
-            raise FileNotFoundError(f"Image not found at: {image_path}")
-        with open(image_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode("utf-8")
-        suffix = image_path.suffix.lower().lstrip(".")
-        mime = "jpeg" if suffix in ["jpg", "jpeg"] else "png"
-        return f"data:image/{mime};base64,{encoded}"
-    elif isinstance(image, Image.Image):
+        if isinstance(image, str) and image.startswith("data:image/"):
+            try:
+                _, encoded_data = image.split(",", 1)
+                image = Image.open(io.BytesIO(base64.b64decode(encoded_data))).convert("RGB")
+                output_format = "JPEG"
+            except (ValueError, OSError):
+                return image
+        if isinstance(image, Image.Image):
+            pass
+        else:
+            image_path = Path(image)
+            if not image_path.exists():
+                raise FileNotFoundError(f"Image not found at: {image_path}")
+            with Image.open(image_path) as loaded_image:
+                image = loaded_image.convert("RGB")
+            output_format = "PNG" if image_path.suffix.lower() == ".png" else "JPEG"
+    if isinstance(image, Image.Image):
+        normalized = image.convert("RGB")
+        normalized.thumbnail((768, 768), Image.Resampling.LANCZOS)
         buffered = io.BytesIO()
-        image.save(buffered, format="PNG")
+        if output_format == "PNG":
+            normalized.save(buffered, format="PNG", optimize=True)
+        else:
+            normalized.save(buffered, format="JPEG", quality=75, optimize=True)
         encoded = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        return f"data:image/png;base64,{encoded}"
+        mime = "png" if output_format == "PNG" else "jpeg"
+        return f"data:image/{mime};base64,{encoded}"
     else:
         raise ValueError(f"Unsupported image type: {type(image)}")
 

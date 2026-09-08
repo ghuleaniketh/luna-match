@@ -1,96 +1,82 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, ChevronDown, ChevronUp, CircleHelp, X } from 'lucide-react';
+import { Bot, BookOpen, ChevronDown, ChevronUp, CircleHelp, Cpu, Eye, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { checkHealth, sendChat } from '../../api/lunaMatch';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import RegistrationResultCard from './RegistrationResultCard';
 import TypingIndicator from './TypingIndicator';
 
-const SUGGESTED_QUESTIONS = [
-  'What is OHRC resolution?',
-  'Explain RMSE in registration',
-  'How does RANSAC work?',
-  'What is sub-pixel accuracy?',
-];
-
+const SUGGESTED_QUESTIONS = ['What is OHRC resolution?', 'Explain RMSE in registration', 'How does RANSAC work?', 'What is sub-pixel accuracy?'];
 const QUICK_ACTIONS = ['Explain Result', 'Analyze Matches', 'Explain RMSE', 'Compare Images'];
-
-const INITIAL_MESSAGES = [
-  {
-    id: 'welcome',
-    sender: 'bot',
-    text: "Hello! I'm Luna-Copilot — your AI assistant for the LUNA-MATCH Chandrayaan-2 image correspondence engine. Ask me about illumination invariance, RMSE, sub-pixel accuracy, OHRC/TMC-2/IIRS sensors, or upload images for live analysis!",
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  },
-];
-
-const MOCK_REPLIES = {
-  registration:
-    'Image registration aligns two views of the same lunar region so their features share a common coordinate system. LUNA-MATCH is designed to compare source and reference imagery despite differences in illumination, scale, and sensor characteristics.',
-  rmse:
-    'RMSE, or root mean square error, summarizes the average distance between corresponding points after geometric alignment. Lower values generally indicate tighter registration, but it should be interpreted alongside inlier ratio and visual inspection.',
-  ohrc:
-    'OHRC is the Orbiter High Resolution Camera on Chandrayaan-2. It provides high-resolution lunar surface imagery that can serve as a source or reference in a registration workflow.',
-  matches:
-    'Candidate matches are filtered through geometric verification. Matches that do not agree with the estimated transformation are treated as outliers, which helps keep the registered result reliable.',
-  default:
-    'This is a frontend preview response. The LUNA AI interface is ready to connect to your future chatbot backend for lunar image registration questions.',
+const INTENT_BADGE = {
+  rag_knowledge: { label: 'RAG', icon: <BookOpen size={12} />, color: 'text-emerald-400 bg-emerald-950 border-emerald-800' },
+  analyze_image: { label: 'VLM', icon: <Eye size={12} />, color: 'text-purple-400 bg-purple-950 border-purple-800' },
+  register_images: { label: 'Registration', icon: <Cpu size={12} />, color: 'text-cyan-400 bg-cyan-950 border-cyan-800' },
+  explain_registration: { label: 'VLM+RAG', icon: <Sparkles size={12} />, color: 'text-orange-400 bg-orange-950 border-orange-800' },
+  compare_images: { label: 'Compare', icon: <Eye size={12} />, color: 'text-blue-400 bg-blue-950 border-blue-800' },
+  general_chat: { label: 'Chat', icon: <Bot size={12} />, color: 'text-slate-400 bg-slate-800 border-slate-700' },
 };
 
-export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttach }) {
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+function createMessage(sender, text, extra = {}) {
+  return { id: `${sender}-${Date.now()}-${Math.random()}`, sender, text, timestamp: sender === 'user' ? 'Just now' : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), ...extra };
+}
+
+export default function ChatPanel({ isOpen, onClose, sourceImage = null, referenceImage = null }) {
+  const [messages, setMessages] = useState([
+    createMessage('bot', "Hello! I'm LUNA AI.\n\nI can answer lunar science questions, explain registration results, and analyze the images selected in the workspace.", { id: 'welcome', timestamp: 'Ready now' }),
+  ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [backendOnline, setBackendOnline] = useState(null);
   const [attachment, setAttachment] = useState(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef(null);
-  const responseTimerRef = useRef(null);
 
   useEffect(() => {
-    if (isOpen && !isMinimized) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (!isOpen || backendOnline !== null) return;
+    checkHealth().then((data) => setBackendOnline(data?.status === 'online'));
+  }, [isOpen, backendOnline]);
+
+  useEffect(() => {
+    if (isOpen && !isMinimized) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen, isMinimized]);
 
-  useEffect(
-    () => () => {
-      if (responseTimerRef.current) window.clearTimeout(responseTimerRef.current);
-      if (attachment?.preview) URL.revokeObjectURL(attachment.preview);
-    },
-    [attachment],
-  );
-
-  const handleSend = (text = inputText) => {
+  const handleSend = async (text = inputText) => {
     const query = text.trim();
     if (!query || isTyping) return;
 
-    onSendMessage?.(query);
     setMessages((current) => [...current, createMessage('user', query)]);
     setInputText('');
     setIsTyping(true);
 
-    responseTimerRef.current = window.setTimeout(() => {
-      setMessages((current) => [...current, createMessage('bot', getMockReply(query))]);
+    try {
+      const result = await sendChat(query, attachment?.dataUrl || sourceImage, referenceImage);
+      setMessages((current) => [...current, createMessage('bot', result.text_response, {
+        intent: result.intent,
+        sources: result.sources || [],
+        registrationResult: result.registration_result,
+      })]);
+      setBackendOnline(true);
+    } catch (error) {
+      setBackendOnline(false);
+      setMessages((current) => [...current, createMessage('bot', `I could not reach the LUNA-MATCH backend. ${error.message}`)]);
+    } finally {
       setIsTyping(false);
-    }, 700);
+    }
   };
 
   const handleAttach = (file) => {
     if (!file || !file.type.startsWith('image/')) return;
-    const nextAttachment = { name: file.name, preview: URL.createObjectURL(file) };
-    setAttachment((current) => {
-      if (current?.preview) URL.revokeObjectURL(current.preview);
-      return nextAttachment;
-    });
-    onImageAttach?.(file);
+    const reader = new FileReader();
+    reader.onload = () => setAttachment({ name: file.name, preview: URL.createObjectURL(file), dataUrl: reader.result });
+    reader.readAsDataURL(file);
   };
 
   const removeAttachment = () => {
     if (attachment?.preview) URL.revokeObjectURL(attachment.preview);
     setAttachment(null);
   };
-
-  const askQuestion = (question) => setInputText(question);
 
   if (!isOpen) return null;
 
@@ -105,111 +91,43 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
     >
       <header className="flex items-center justify-between border-b border-white/10 bg-white/[0.035] px-4 py-3.5">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/30 bg-cyan-950/70 text-cyan-300">
-            <Bot size={18} />
-            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-[#050b17]" />
-          </div>
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-400/30 bg-cyan-950/70 text-cyan-300"><Bot size={18} /></div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="truncate text-sm font-semibold tracking-wide text-slate-100">LUNA AI</h2>
-              <span className="hidden rounded border border-cyan-400/20 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-300/80 sm:inline">
-                Assistant
-              </span>
-            </div>
-            <p className="truncate text-[11px] text-slate-500">
-              <span className="text-emerald-400">●</span> Lunar Image Registration Assistant
-            </p>
+            <div className="flex items-center gap-2"><h2 className="truncate text-sm font-semibold tracking-wide text-slate-100">LUNA AI</h2><span className="rounded border border-cyan-400/20 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-300/80">Assistant</span></div>
+            <p className="truncate text-[11px] text-slate-500"><span className={backendOnline ? 'text-emerald-400' : 'text-yellow-400'}>●</span> {backendOnline === null ? 'Connecting to backend' : backendOnline ? 'Backend online' : 'Backend unavailable'}</p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
-          <HeaderButton
-            label={isMinimized ? 'Expand assistant' : 'Minimize assistant'}
-            onClick={() => setIsMinimized((current) => !current)}
-          >
-            {isMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </HeaderButton>
-          <HeaderButton label="Close assistant" onClick={onClose}>
-            <X size={16} />
-          </HeaderButton>
-        </div>
+        <div className="flex items-center gap-1"><HeaderButton label={isMinimized ? 'Expand assistant' : 'Minimize assistant'} onClick={() => setIsMinimized((current) => !current)}>{isMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</HeaderButton><HeaderButton label="Close assistant" onClick={onClose}><X size={16} /></HeaderButton></div>
       </header>
 
       <AnimatePresence initial={false}>
-        {!isMinimized && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-0 flex-1 flex-col">
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              <div className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-600">
-                <CircleHelp size={12} className="text-cyan-400/70" />
-                Mission support channel
-              </div>
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div key={message.id}>
-                    <ChatMessage message={message} />
-                    {message.id === 'welcome' && messages.length === 1 && <SuggestedQuestions onSelect={askQuestion} />}
-                    {message.showResult && (
-                      <RegistrationResultCard
-                        onViewRegistered={() => askQuestion('Show the registered image')}
-                        onViewMatches={() => askQuestion('Show the match points')}
-                      />
-                    )}
-                  </div>
-                ))}
-                {isTyping && <TypingIndicator />}
-                <div ref={messagesEndRef} />
-              </div>
+        {!isMinimized && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-600"><CircleHelp size={12} className="text-cyan-400/70" /> Mission support channel</div>
+            <div className="space-y-4">
+              {messages.map((message) => <div key={message.id}><ChatMessage message={message} /><MessageMeta message={message} /></div>)}
+              {messages.length === 1 && <SuggestedQuestions onSelect={handleSend} />}
+              {isTyping && <TypingIndicator />}
+              <div ref={messagesEndRef} />
             </div>
-            <div className="border-t border-white/10 bg-[#07101e]/80 px-3 pt-2.5">
-              <div className="flex gap-1.5 overflow-x-auto pb-2 [scrollbar-width:none]">
-                {QUICK_ACTIONS.map((action) => (
-                  <button key={action} type="button" onClick={() => askQuestion(action)} className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-slate-400 transition-colors hover:border-cyan-400/30 hover:text-cyan-200">
-                    {action}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <ChatInput value={inputText} onChange={setInputText} onSend={() => handleSend()} attachment={attachment} onAttach={handleAttach} onRemoveAttachment={removeAttachment} disabled={isTyping} />
-          </motion.div>
-        )}
+          </div>
+          <div className="border-t border-white/10 bg-[#07101e]/80 px-3 pt-2.5"><div className="flex gap-1.5 overflow-x-auto pb-2 [scrollbar-width:none]">{QUICK_ACTIONS.map((action) => <button key={action} type="button" onClick={() => handleSend(action)} className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-slate-400 transition-colors hover:border-cyan-400/30 hover:text-cyan-200">{action}</button>)}</div></div>
+          <ChatInput value={inputText} onChange={setInputText} onSend={() => handleSend()} attachment={attachment} onAttach={handleAttach} onRemoveAttachment={removeAttachment} disabled={isTyping} />
+        </motion.div>}
       </AnimatePresence>
     </motion.aside>
   );
 }
 
+function MessageMeta({ message }) {
+  const badge = message.intent ? INTENT_BADGE[message.intent] : null;
+  return <>{badge && <div className="ml-9 mt-1 flex items-center gap-1 text-[10px] font-mono"><span className={`flex items-center gap-1 rounded border px-1.5 py-0.5 ${badge.color}`}>{badge.icon}{badge.label}</span>{message.sources?.slice(0, 2).map((source, index) => <span key={index} className="rounded border border-white/10 px-1.5 py-0.5 text-slate-600">{source.sensor || source.document || 'source'}</span>)}</div>}{message.registrationResult && <RegistrationResultCard result={message.registrationResult} />}</>;
+}
+
 function SuggestedQuestions({ onSelect }) {
-  return (
-    <div className="mt-4 grid grid-cols-2 gap-2 pl-9">
-      {SUGGESTED_QUESTIONS.map((question) => (
-        <button key={question} type="button" onClick={() => onSelect(question)} className="rounded-lg border border-white/10 bg-white/[0.025] px-2.5 py-2 text-left text-[10px] leading-snug text-slate-400 transition-colors hover:border-cyan-400/35 hover:bg-cyan-950/30 hover:text-cyan-100">
-          {question}
-        </button>
-      ))}
-    </div>
-  );
+  return <div className="mt-4 grid grid-cols-2 gap-2 pl-9">{SUGGESTED_QUESTIONS.map((question) => <button key={question} type="button" onClick={() => onSelect(question)} className="rounded-lg border border-white/10 bg-white/[0.025] px-2.5 py-2 text-left text-[10px] leading-snug text-slate-400 transition-colors hover:border-cyan-400/35 hover:bg-cyan-950/30 hover:text-cyan-100">{question}</button>)}</div>;
 }
 
 function HeaderButton({ label, onClick, children }) {
-  return (
-    <button type="button" onClick={onClick} aria-label={label} className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/10 hover:text-slate-100">
-      {children}
-    </button>
-  );
-}
-
-function createMessage(sender, text) {
-  return {
-    id: `${sender}-${Date.now()}-${Math.random()}`,
-    sender,
-    text,
-    timestamp: sender === 'user' ? 'Just now' : 'Preview response',
-  };
-}
-
-function getMockReply(query) {
-  const normalized = query.toLowerCase();
-  if (normalized.includes('rmse') || normalized.includes('error')) return MOCK_REPLIES.rmse;
-  if (normalized.includes('ohrc')) return MOCK_REPLIES.ohrc;
-  if (normalized.includes('match') || normalized.includes('reject')) return MOCK_REPLIES.matches;
-  if (normalized.includes('registration')) return MOCK_REPLIES.registration;
-  return MOCK_REPLIES.default;
+  return <button type="button" onClick={onClick} aria-label={label} className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/10 hover:text-slate-100">{children}</button>;
 }

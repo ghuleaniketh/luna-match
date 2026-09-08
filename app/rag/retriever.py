@@ -48,9 +48,17 @@ class LunarRAGRetriever:
         results = self.vector_store.search(query_vector, top_k=top_k)
 
         # Filter by threshold
-        filtered_results = [
-            (chunk, score) for chunk, score in results if score >= threshold
-        ]
+        filtered_results = []
+        for chunk, score in results:
+            if score < threshold:
+                continue
+            if not chunk.sensor:
+                text = chunk.text.upper()
+                for sensor in ("OHRC", "TMC-2", "IIRS"):
+                    if sensor in text:
+                        chunk.sensor = sensor
+                        break
+            filtered_results.append((chunk, score))
         return filtered_results
 
     def format_context_for_prompt(
