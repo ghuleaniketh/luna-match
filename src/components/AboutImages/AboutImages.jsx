@@ -79,16 +79,16 @@ export default function AboutImages() {
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-950/40 px-3.5 py-1 font-mono text-xs uppercase tracking-widest text-cyan-300 backdrop-blur-md">
-            <Scan className="h-3.5 w-3.5 text-cyan-400" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-stone-400/25 bg-stone-950/65 px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-stone-300 backdrop-blur-md">
+            <Scan className="h-3.5 w-3.5 text-sky-300/80" />
             Dataset Inspection
           </div>
 
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
-            Source <span className="text-cyan-400">&</span> Reference Imagery
+          <h2 className="mt-4 font-serif text-3xl font-semibold tracking-[-0.02em] text-stone-100 sm:text-4xl lg:text-5xl">
+            Source <span className="font-normal text-sky-300/90">&</span> Reference Imagery
           </h2>
 
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-base">
+          <p className="mt-3 max-w-2xl text-[15px] leading-7 text-stone-400 sm:text-base">
             Inspect the high-resolution lunar orbital observations used in our
             benchmark. Click any crop thumbnail below each view to inspect
             corresponding regional topography under extreme lighting
