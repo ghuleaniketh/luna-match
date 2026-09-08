@@ -7,6 +7,7 @@ import AnalysisWorkspace from './components/AnalysisWorkspace/AnalysisWorkspace'
 import ChatPanel from './components/Chatbot/ChatPanel';
 import ChatToggle from './components/Chatbot/ChatToggle';
 import SiteLoader from './components/ui/SiteLoader';
+import Footer from './components/Footer/Footer';
 
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -26,6 +27,7 @@ export default function App() {
         <AboutImages />
         <AnalysisWorkspace onImagesChange={setChatImages} />
       </main>
+      <Footer />
 
       <AnimatePresence>
         {isChatOpen && (
