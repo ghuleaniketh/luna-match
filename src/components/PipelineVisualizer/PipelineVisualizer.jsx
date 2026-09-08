@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import {
   Sliders,
   Sparkles,
@@ -21,11 +22,20 @@ const ICON_MAP = {
 };
 
 export default function PipelineVisualizer({ stages, currentStageIndex, status }) {
+  const sectionRef = useRef(null);
+  const inView = useInView(sectionRef, { once: false, amount: 0.15 });
   const isProcessing = status === 'processing';
   const isCompleted = status === 'completed';
 
   return (
-    <section id="pipeline" className="font-sans py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <motion.section
+      ref={sectionRef}
+      id="pipeline"
+      className="font-sans py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      transition={{ duration: 0.65, ease: "easeOut" }}
+    >
       <Card className="relative overflow-hidden rounded-3xl border-slate-800 p-6 shadow-2xl sm:p-8">
         {/* Subtle background glow */}
         <div className="absolute top-0 right-1/4 w-96 h-40 bg-cyan-500/5 blur-3xl pointer-events-none" />
@@ -134,6 +144,6 @@ export default function PipelineVisualizer({ stages, currentStageIndex, status }
           })}
         </div>
       </Card>
-    </section>
+    </motion.section>
   );
 }

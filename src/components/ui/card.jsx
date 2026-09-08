@@ -6,7 +6,7 @@ export const Card = forwardRef(function Card({ className, ...props }, ref) {
     <div
       ref={ref}
       className={cn(
-        "rounded-2xl border border-slate-800/90 bg-slate-950/70 text-slate-100 shadow-xl backdrop-blur-xl",
+        "rounded-xl border border-zinc-800/90 bg-zinc-950/75 text-zinc-100 shadow-lg shadow-black/20 backdrop-blur-xl",
         className,
       )}
       {...props}
@@ -56,4 +56,3 @@ export const CardFooter = forwardRef(function CardFooter(
     <div ref={ref} className={cn("flex items-center p-6 pt-0", className)} {...props} />
   );
 });
-

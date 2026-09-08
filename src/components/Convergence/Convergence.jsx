@@ -1,10 +1,11 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { Radar } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Card } from "../ui/card";
 import { Separator } from "../ui/separator";
 import MoonModel from "../Hero/MoonModel";
+import SatelliteModel from "../Hero/SatelliteModel";
 
 const STEPS = [
   {
@@ -35,7 +36,8 @@ const STEPS = [
 
 export default function Convergence() {
   const sectionRef = useRef(null);
-  const inView = useInView(sectionRef, { once: true, amount: 0.2 });
+  const inView = useInView(sectionRef, { once: false, amount: 0.2 });
+  const [activeStep, setActiveStep] = useState(0);
 
   const lineTransition = { duration: 1.4, ease: "easeInOut" };
 
@@ -58,7 +60,7 @@ export default function Convergence() {
           </div>
 
           <h2 className="mt-2 text-3xl font-medium tracking-normal text-slate-100 sm:text-4xl lg:text-4xl">
-            LUNA<span className="text-sky-300">-MATCH</span>
+            LUNA<span className="text-sky-200">-MATCH</span>
           </h2>
 
           <h3 className="mt-1.5 text-base font-normal text-slate-200 sm:text-lg">
@@ -76,19 +78,30 @@ export default function Convergence() {
           {/* 4 Steps */}
           <div className="mt-6 space-y-3">
             {STEPS.map((step, idx) => (
-              <div key={step.number}>
+              <button
+                type="button"
+                key={step.number}
+                onClick={() => setActiveStep(idx)}
+                className={`block w-full text-left transition-colors ${
+                  activeStep === idx ? "text-slate-100" : "text-slate-400"
+                }`}
+              >
                 <div className="flex items-start gap-3">
                   <Badge
                     variant="outline"
-                    className="shrink-0 rounded-md border-slate-600/80 bg-slate-900/30 px-2 py-0.5 text-[11px] font-normal text-slate-300"
+                    className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-normal ${
+                      activeStep === idx
+                        ? "border-blue-400/50 bg-blue-950/40 text-blue-200"
+                        : "border-slate-600/80 bg-slate-900/30 text-slate-300"
+                    }`}
                   >
                     {step.number}
                   </Badge>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-xs font-medium text-slate-200 sm:text-sm">
+                    <h4 className="text-xs font-medium sm:text-sm">
                       {step.title}
                     </h4>
-                    <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400 sm:text-xs">
+                    <p className="mt-0.5 text-[11px] leading-relaxed sm:text-xs">
                       {step.description}
                     </p>
                   </div>
@@ -96,18 +109,18 @@ export default function Convergence() {
                 {idx < STEPS.length - 1 && (
                   <Separator className="my-2.5 bg-white/10" />
                 )}
-              </div>
+              </button>
             ))}
           </div>
 
           {/* Tagline Callout */}
           <Card className="mt-6 rounded-xl border border-slate-700/80 bg-slate-950/20 p-3.5 shadow-none backdrop-blur-none sm:p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/40 text-sky-300">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/40 text-sky-200">
                 <Radar className="h-5 w-5" />
               </div>
               <p className="text-xs font-normal leading-relaxed text-slate-200 sm:text-sm">
-                Same Moon. Multiple Perspectives. Deeper Insights.
+                {STEPS[activeStep].title}: {STEPS[activeStep].description}
               </p>
             </div>
           </Card>
@@ -179,19 +192,21 @@ export default function Convergence() {
             alt="Chandrayaan-2 satellite"
             className="absolute left-1/2 top-[18%] z-20 w-28 -translate-x-1/2 rotate-[10deg] sm:w-32 md:w-36 lg:w-40"
             initial={{ opacity: 0, y: -10 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
             transition={{ duration: 0.6 }}
           />
 
           {/* Satellite 2 (Centered on the page) */}
-          <motion.img
-            src="/Satellite.png"
-            alt="LRO satellite"
-            className="absolute left-1/2 top-[68%] z-20 w-28 -translate-x-1/2 -rotate-[10deg] -scale-x-100 sm:w-32 md:w-36 lg:w-40"
+          <motion.div
+            role="img"
+            aria-label="LRO satellite"
+            className="absolute left-1/2 top-[68%] z-20 aspect-square w-28 -translate-x-1/2 -rotate-[10deg] -scale-x-100 sm:w-32 md:w-36 lg:w-40"
             initial={{ opacity: 0, y: 10 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-          />
+          >
+            <SatelliteModel />
+          </motion.div>
 
           {/* Bottom Satellite (LRO / Orange) Info Label */}
           <motion.div

@@ -3,14 +3,14 @@ import { cn } from "../../lib/utils";
 
 const buttonVariants = {
   default:
-    "bg-cyan-500 text-slate-950 shadow-[0_8px_24px_-10px_rgba(34,211,238,0.8)] hover:bg-cyan-400",
+    "bg-blue-500 text-white shadow-sm shadow-blue-950/40 hover:bg-blue-400",
   secondary:
-    "border border-slate-700 bg-slate-900/80 text-slate-200 hover:border-cyan-500/50 hover:bg-slate-800",
+    "border border-zinc-700 bg-zinc-900/80 text-zinc-200 hover:border-zinc-500 hover:bg-zinc-800",
   outline:
-    "border border-white/15 bg-white/[0.04] text-slate-200 hover:border-cyan-400/50 hover:bg-white/[0.08]",
+    "border border-zinc-700 bg-zinc-900/40 text-zinc-200 hover:border-zinc-500 hover:bg-zinc-800/70",
   ghost: "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100",
   gradient:
-    "bg-gradient-to-r from-cyan-400 to-orange-400 text-slate-950 shadow-[0_8px_24px_-10px_rgba(34,211,238,0.8)] hover:brightness-110",
+    "bg-blue-500 text-white shadow-sm shadow-blue-950/40 hover:bg-blue-400",
 };
 
 const buttonSizes = {
@@ -30,7 +30,7 @@ export const Button = forwardRef(function Button(
     <Component
       ref={ref}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 disabled:pointer-events-none disabled:opacity-40",
+        "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 disabled:pointer-events-none disabled:opacity-40",
         buttonVariants[variant],
         buttonSizes[size],
         className,
@@ -39,4 +39,3 @@ export const Button = forwardRef(function Button(
     />
   );
 });
-

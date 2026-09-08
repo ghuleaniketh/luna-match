@@ -10,8 +10,8 @@ export default function MetricsCards({ metrics }) {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard
         label="Correspondences"
-        icon={<Target className="h-4 w-4 text-cyan-400" />}
-        className="hover:border-cyan-500/40"
+        icon={<Target className="h-4 w-4 text-sky-300" />}
+        className="hover:border-sky-400/35"
       >
         <span className="text-3xl font-extrabold text-slate-100">{metrics.matchCount}</span>
         <Badge variant="success" className="px-2 py-0.5 text-[10px]">
@@ -22,27 +22,27 @@ export default function MetricsCards({ metrics }) {
 
       <MetricCard
         label="Registration Error"
-        icon={<Gauge className="h-4 w-4 text-teal-400" />}
-        className="hover:border-cyan-500/40"
+        icon={<Gauge className="h-4 w-4 text-slate-300" />}
+        className="hover:border-sky-400/35"
       >
-        <span className="text-3xl font-extrabold text-cyan-400">{metrics.registrationError}</span>
+        <span className="text-3xl font-semibold text-sky-300">{metrics.registrationError}</span>
         <p className="mt-2 text-xs text-slate-400">Sub-pixel optical ridge alignment precision</p>
       </MetricCard>
 
       <MetricCard
         label="Verification Confidence"
-        icon={<ShieldCheck className="h-4 w-4 text-orange-400" />}
-        className="hover:border-orange-500/40"
+        icon={<ShieldCheck className="h-4 w-4 text-orange-300" />}
+        className="hover:border-orange-400/35"
       >
-        <span className="text-3xl font-extrabold text-orange-400">{metrics.confidence}%</span>
+        <span className="text-3xl font-semibold text-orange-300">{metrics.confidence}%</span>
         <Badge variant="success" className="px-2 py-0.5 font-mono text-[10px]">HIGH</Badge>
         <p className="mt-2 text-xs text-slate-400">Ground-truth region match probability</p>
       </MetricCard>
 
       <MetricCard
         label="Warp Model"
-        icon={<GitCompare className="h-4 w-4 text-blue-400" />}
-        className="hover:border-blue-500/40"
+        icon={<GitCompare className="h-4 w-4 text-slate-300" />}
+        className="hover:border-slate-500/50"
       >
         <span className="line-clamp-1 text-base font-bold text-slate-100">
           {metrics.transformationType}

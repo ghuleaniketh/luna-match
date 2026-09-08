@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { UploadCloud, X, Sparkles, Loader2 } from "lucide-react";
+import { motion, useInView } from "framer-motion";
+import { UploadCloud, X, Sparkles, Loader2, Check, Circle } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
@@ -21,7 +22,7 @@ function ImageBox({ label, image, onSelect, onClear }) {
         handleFile(e.dataTransfer.files?.[0]);
       }}
       onClick={() => !image && inputRef.current?.click()}
-      className="relative flex h-64 flex-col items-center justify-center rounded-2xl border-dashed border-white/15 bg-white/[0.02] p-0 transition-colors hover:border-cyan-400/40"
+      className="relative flex h-64 flex-col items-center justify-center rounded-xl border-dashed border-zinc-800 bg-zinc-950/40 p-0 transition-colors hover:border-blue-400/50"
     >
       <Input
         ref={inputRef}
@@ -53,10 +54,10 @@ function ImageBox({ label, image, onSelect, onClear }) {
           </Button>
         </>
       ) : (
-        <div className="flex cursor-pointer flex-col items-center gap-2 text-white/50">
+        <div className="flex cursor-pointer flex-col items-center gap-2 text-zinc-500">
           <UploadCloud size={24} />
           <Badge variant="outline">{label}</Badge>
-          <span className="text-xs text-white/30">Click or drag an image</span>
+          <span className="text-xs text-zinc-600">Click or drag an image</span>
         </div>
       )}
     </Card>
@@ -75,25 +76,36 @@ async function runCorrespondence(image1, image2) {
 }
 
 export default function AnalysisWorkspace() {
+  const sectionRef = useRef(null);
+  const inView = useInView(sectionRef, { once: false, amount: 0.15 });
   const [imageOne, setImageOne] = useState(null);
   const [imageTwo, setImageTwo] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState(null);
+  const [analysisPhase, setAnalysisPhase] = useState("");
 
   const canRun = imageOne && imageTwo && !isRunning;
 
   const handleRun = async () => {
     setIsRunning(true);
     setResult(null);
+    setAnalysisPhase("Detecting common features");
+    await new Promise((resolve) => setTimeout(resolve, 550));
+    setAnalysisPhase("Estimating alignment");
     const data = await runCorrespondence(imageOne, imageTwo);
+    setAnalysisPhase("Complete");
     setResult(data);
     setIsRunning(false);
   };
 
   return (
-    <section
+    <motion.section
+      ref={sectionRef}
       id="analyze"
       className="relative px-8 py-28 text-white md:px-16"
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      transition={{ duration: 0.65, ease: "easeOut" }}
     >
       <div className="mx-auto max-w-4xl">
         <p className="mb-3 text-sm text-cyan-400">Run your own</p>
@@ -104,6 +116,25 @@ export default function AnalysisWorkspace() {
           Add two images of the same lunar region and LUNA-MATCH will find
           the correspondence between them.
         </p>
+
+        <Card className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border-zinc-800 bg-zinc-950/60 px-4 py-3 shadow-none">
+          <div className="flex items-center gap-2 text-xs font-medium text-zinc-300">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/15 text-blue-300">
+              {imageOne ? <Check size={12} /> : <Circle size={9} />}
+            </span>
+            Source image
+          </div>
+          <div className="hidden h-4 w-px bg-zinc-800 sm:block" />
+          <div className="flex items-center gap-2 text-xs font-medium text-zinc-300">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/15 text-blue-300">
+              {imageTwo ? <Check size={12} /> : <Circle size={9} />}
+            </span>
+            Reference image
+          </div>
+          <Badge variant={canRun ? "success" : "muted"} className="ml-auto">
+            {canRun ? "Ready to compare" : "Waiting for both images"}
+          </Badge>
+        </Card>
 
         <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2">
           <ImageBox
@@ -131,7 +162,7 @@ export default function AnalysisWorkspace() {
             {isRunning ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Analyzing...
+                {analysisPhase || "Analyzing..."}
               </>
             ) : (
               <>
@@ -151,7 +182,7 @@ export default function AnalysisWorkspace() {
           </div>
         )}
       </div>
-    </section>
+    </motion.section>
   );
 }
 

@@ -24,19 +24,19 @@ export default function Hero() {
           <div className="hidden items-center gap-5 text-xs text-white/70 sm:flex sm:text-sm">
             <a
               href="#overview"
-              className="transition-colors hover:text-cyan-300"
+              className="transition-colors hover:text-blue-300"
             >
               Overview
             </a>
             <a
               href="#pipeline"
-              className="transition-colors hover:text-cyan-300"
+              className="transition-colors hover:text-blue-300"
             >
               Pipeline
             </a>
             <a
               href="#imagery"
-              className="hidden transition-colors hover:text-cyan-300 sm:block"
+              className="hidden transition-colors hover:text-blue-300 sm:block"
             >
               Imagery
             </a>
@@ -60,12 +60,12 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
           {/* Left Column: Headline & Content */}
           <div className="lg:col-span-7 max-w-2xl z-10 relative lg:pl-6">
-            <h1 className="whitespace-nowrap text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none text-white">
+            <h1 className="whitespace-nowrap text-5xl font-black leading-none tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
               LUNA-MATCH
             </h1>
 
             <div className="relative mt-3 sm:mt-4">
-            <p className="max-w-xl text-base sm:text-lg text-white/70 leading-relaxed">
+            <p className="max-w-xl text-base leading-relaxed text-slate-300/85 sm:text-lg">
               LUNA-MATCH finds the same lunar feature across images captured
               under different sun angles, scales, and sensors — where standard
               matching fails.
