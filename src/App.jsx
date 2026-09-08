@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import WebsiteLoader from './components/Loader/WebsiteLoader';
 import Hero from './components/Hero/Hero';
@@ -8,7 +7,6 @@ import AboutImages from './components/AboutImages/AboutImages';
 import AnalysisWorkspace from './components/AnalysisWorkspace/AnalysisWorkspace';
 import ChatPanel from './components/Chatbot/ChatPanel';
 import ChatToggle from './components/Chatbot/ChatToggle';
-import SiteLoader from './components/ui/SiteLoader';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -30,9 +28,10 @@ export default function App() {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[#09090b] text-zinc-100">
-      <SiteLoader />
-
+    <div className="relative flex min-h-screen flex-col bg-[#030712] text-slate-100">
+      <AnimatePresence>
+        {isLoading && <WebsiteLoader key="site-loader" />}
+      </AnimatePresence>
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden space-grid"
