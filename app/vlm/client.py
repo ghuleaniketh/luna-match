@@ -59,7 +59,21 @@ def encode_image_to_base64(image: Union[str, Path, Image.Image], max_dim: int = 
         else:
             pil_img = Image.open(image_path).convert("RGB")
     elif isinstance(image, Image.Image):
-        pil_img = image.convert("RGB") if image.mode != "RGB" else image.copy()
+        if image.mode in ("F", "I", "I;16", "L"):
+            import numpy as np
+            arr = np.array(image).astype(np.float64)
+            valid = ~np.isnan(arr)
+            if np.any(valid):
+                vmin, vmax = np.min(arr[valid]), np.max(arr[valid])
+                if vmax > vmin:
+                    arr_u8 = ((arr - vmin) / (vmax - vmin) * 255.0).clip(0, 255).astype(np.uint8)
+                else:
+                    arr_u8 = np.zeros_like(arr, dtype=np.uint8)
+            else:
+                arr_u8 = np.zeros_like(arr, dtype=np.uint8)
+            pil_img = Image.fromarray(arr_u8).convert("RGB")
+        else:
+            pil_img = image.convert("RGB") if image.mode != "RGB" else image.copy()
     else:
         raise ValueError(f"Unsupported image type: {type(image)}")
 

@@ -110,15 +110,15 @@ class LunarTools:
         metrics: Optional[Dict[str, Any]] = None,
         question: Optional[str] = None,
         rag_query: Optional[str] = None,
+        rag_context: Optional[str] = None,
         comparison_context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Synthesize registration explanation combining Core ML metrics, visual overlay, RAG knowledge,
         and initial comparative visual assessment.
         """
-        rag_context = None
         sources = []
-        if rag_query:
+        if rag_query and not rag_context:
             rag_res = self.search_lunar_knowledge(rag_query, top_k=2)
             rag_context = rag_res["context"]
             sources = rag_res["sources"]

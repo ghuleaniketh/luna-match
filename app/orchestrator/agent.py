@@ -144,24 +144,23 @@ class LunaMatchOrchestrator:
         # Intent 4: Perform Image Registration
         elif intent == IntentType.REGISTER_IMAGES:
             tools_called.append("register_images")
-            tools_called.append("compare_images")
 
-            # Execute Core ML registration and initial VLM comparative analysis concurrently
+            # Execute Core ML registration and RAG retrieval concurrently
             import concurrent.futures
+            rag_query = "Root Mean Square Error RMSE inlier ratio subpixel accuracy"
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 future_reg = executor.submit(
                     self.tools.register_images,
                     source_image=source_image,
                     reference_image=reference_image,
                 )
-                future_compare = executor.submit(
-                    self.tools.compare_images,
-                    source_image=source_image,
-                    reference_image=reference_image,
-                    question=f"Initial comparative visual assessment for registration: {query}",
+                future_rag = executor.submit(
+                    self.tools.search_lunar_knowledge,
+                    query=rag_query,
+                    top_k=2,
                 )
                 reg_result: RegistrationResult = future_reg.result()
-                comparison_analysis: str = future_compare.result()
+                rag_res = future_rag.result()
 
             tools_called.append("explain_registration")
             explanation = self.tools.explain_registration(
@@ -170,15 +169,14 @@ class LunaMatchOrchestrator:
                 overlay_image=reg_result.overlay_image,
                 metrics=reg_result.to_metrics_dict(),
                 question=query,
-                rag_query="Root Mean Square Error RMSE inlier ratio subpixel accuracy",
-                comparison_context=comparison_analysis,
+                rag_context=rag_res["context"],
             )
 
             return AgentResponse(
                 intent=intent,
                 text_response=explanation["explanation"],
                 registration_result=reg_result.model_dump(),
-                sources=explanation["sources"],
+                sources=rag_res["sources"],
                 tools_called=tools_called,
             )
 

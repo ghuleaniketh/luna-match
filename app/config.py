@@ -33,8 +33,8 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     # Recommended Groq multimodal/default model for image-aware chat.
     # If using a different Groq model, override it in your local .env file.
-    GROQ_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
-    VLM_MAX_TOKENS: int = 2048       # max_new_tokens for generation
+    GROQ_MODEL: str = "qwen/qwen3.8-27b"
+    VLM_MAX_TOKENS: int = 600       # max_new_tokens for generation
 
     # Qwen3-VL recommended VL generation hyperparameters
     VLM_TEMPERATURE: float = 0.7    # Qwen3-VL VL default

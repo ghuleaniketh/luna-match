@@ -28,8 +28,11 @@ def _pil_or_path_to_disk(
     """Save or resolve an image input to a valid path on disk."""
     target_path.parent.mkdir(parents=True, exist_ok=True)
     if isinstance(image, Image.Image):
-        # Save as PNG
-        image.save(target_path, format="PNG")
+        if image.mode in ("F", "I", "I;16") or getattr(image, "format", "") == "TIFF":
+            target_path = target_path.with_suffix(".tif")
+            image.save(target_path, format="TIFF")
+        else:
+            image.save(target_path, format="PNG")
         return target_path
     elif isinstance(image, (str, Path)):
         p = Path(image)

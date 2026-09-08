@@ -5,6 +5,7 @@ import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import RegistrationResultCard from './RegistrationResultCard';
 import TypingIndicator from './TypingIndicator';
+import { orchestrate } from '../../api/lunaMatch';
 
 const SUGGESTED_QUESTIONS = [
   'What is LUNA-MATCH?',
@@ -38,7 +39,7 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [attachment, setAttachment] = useState(null);
+  const [attachments, setAttachments] = useState([]);
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef(null);
   const responseTimerRef = useRef(null);
@@ -49,37 +50,87 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
 
   useEffect(() => () => {
     if (responseTimerRef.current) window.clearTimeout(responseTimerRef.current);
-    if (attachment?.preview) URL.revokeObjectURL(attachment.preview);
-  }, [attachment]);
+  }, []);
 
-  const handleSend = (text = inputText) => {
+  const handleSend = async (text = inputText) => {
     const query = text.trim();
-    if (!query || isTyping) return;
+    const currentAttachments = [...attachments];
+    if ((!query && currentAttachments.length < 2) || isTyping) return;
 
-    onSendMessage?.(query);
-    setMessages((current) => [...current, createMessage('user', query)]);
+    const userPrompt = query || (currentAttachments.length >= 2 ? 'Register these two lunar images and evaluate alignment.' : 'Analyze this image.');
+    onSendMessage?.(userPrompt);
+    setMessages((current) => [...current, createMessage('user', userPrompt)]);
     setInputText('');
+    setAttachments([]);
     setIsTyping(true);
 
-    responseTimerRef.current = window.setTimeout(() => {
-      setMessages((current) => [...current, createMessage('bot', getMockReply(query))]);
+    try {
+      const resp = await orchestrate({
+        query: userPrompt,
+        source_image_b64: currentAttachments[0]?.dataUrl || null,
+        reference_image_b64: currentAttachments[1]?.dataUrl || null,
+      });
+
+      setMessages((current) => [
+        ...current,
+        {
+          ...createMessage('bot', resp.text_response),
+          showResult: Boolean(resp.registration_result && resp.registration_result.status === 'success'),
+          registration_result: resp.registration_result,
+        }
+      ]);
+    } catch (err) {
+      console.warn('Orchestrate API error:', err);
+      setMessages((current) => [
+        ...current,
+        createMessage('bot', `[Connected to Fallback]: ${getMockReply(userPrompt)}`)
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 700);
+    }
   };
 
   const handleAttach = (file) => {
     if (!file || !file.type.startsWith('image/')) return;
-    const nextAttachment = { name: file.name, preview: URL.createObjectURL(file) };
-    setAttachment((current) => {
-      if (current?.preview) URL.revokeObjectURL(current.preview);
-      return nextAttachment;
-    });
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1024;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        setAttachments((prev) => {
+          if (prev.length >= 2) return prev;
+          return [...prev, { name: file.name, preview: dataUrl, dataUrl }];
+        });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
     onImageAttach?.(file);
   };
 
-  const removeAttachment = () => {
-    if (attachment?.preview) URL.revokeObjectURL(attachment.preview);
-    setAttachment(null);
+  const removeAttachment = (index) => {
+    if (typeof index === 'number') {
+      setAttachments((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setAttachments([]);
+    }
   };
 
   const askQuestion = (question) => setInputText(question);
@@ -130,7 +181,13 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
                   <div key={message.id}>
                     <ChatMessage message={message} />
                     {message.id === 'welcome' && messages.length === 1 && <SuggestedQuestions onSelect={askQuestion} />}
-                    {message.showResult && <RegistrationResultCard onViewRegistered={() => askQuestion('Show the registered image')} onViewMatches={() => askQuestion('Show the match points')} />}
+                    {message.showResult && (
+                      <RegistrationResultCard
+                        result={message.registration_result}
+                        onViewRegistered={() => askQuestion('Show the registered image')}
+                        onViewMatches={() => askQuestion('Show the match points')}
+                      />
+                    )}
                   </div>
                 ))}
                 {isTyping && <TypingIndicator />}
@@ -143,7 +200,15 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
                 {QUICK_ACTIONS.map((action) => <button key={action} type="button" onClick={() => askQuestion(action)} className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-slate-400 transition-colors hover:border-cyan-400/30 hover:text-cyan-200">{action}</button>)}
               </div>
             </div>
-            <ChatInput value={inputText} onChange={setInputText} onSend={() => handleSend()} attachment={attachment} onAttach={handleAttach} onRemoveAttachment={removeAttachment} disabled={isTyping} />
+            <ChatInput
+              value={inputText}
+              onChange={setInputText}
+              onSend={() => handleSend()}
+              attachments={attachments}
+              onAttach={handleAttach}
+              onRemoveAttachment={removeAttachment}
+              disabled={isTyping}
+            />
           </motion.div>
         )}
       </AnimatePresence>

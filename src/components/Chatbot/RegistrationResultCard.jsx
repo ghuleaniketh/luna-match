@@ -1,4 +1,5 @@
-import { CheckCircle2, ExternalLink, Image as ImageIcon, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, ExternalLink, Image as ImageIcon, Layers, ShieldCheck } from 'lucide-react';
 
 const MOCK_RESULT = {
   matches: '542',
@@ -8,7 +9,31 @@ const MOCK_RESULT = {
   subpixel: '0.18 px'
 };
 
-export default function RegistrationResultCard({ onViewRegistered, onViewMatches }) {
+export default function RegistrationResultCard({ result, onViewRegistered, onViewMatches }) {
+  const [activePreview, setActivePreview] = useState(null);
+
+  const displayResult = result ? {
+    matches: result.total_matches ?? result.matches ?? '0',
+    inliers: result.inliers ?? '0',
+    ratio: typeof result.inlier_ratio === 'number' ? `${(result.inlier_ratio * 100).toFixed(1)}%` : (result.ratio || '0%'),
+    rmse: typeof result.rmse === 'number' ? `${result.rmse.toFixed(3)} px` : (result.rmse || '0 px'),
+    subpixel: typeof result.subpixel_error === 'number' ? `${result.subpixel_error.toFixed(3)} px` : (result.subpixel || 'N/A')
+  } : MOCK_RESULT;
+
+  const hasRegisteredImage = Boolean(result?.registered_image);
+  const hasMatchPointsImage = Boolean(result?.match_points_image);
+  const hasOverlayImage = Boolean(result?.overlay_image);
+
+  const handleToggle = (type, fallbackFn) => {
+    if ((type === 'registered' && hasRegisteredImage) ||
+        (type === 'matches' && hasMatchPointsImage) ||
+        (type === 'overlay' && hasOverlayImage)) {
+      setActivePreview((prev) => (prev === type ? null : type));
+    } else if (fallbackFn) {
+      fallbackFn();
+    }
+  };
+
   return (
     <div className="mt-3 rounded-xl border border-cyan-400/20 bg-cyan-950/20 p-3.5">
       <div className="flex items-start justify-between gap-3">
@@ -23,19 +48,67 @@ export default function RegistrationResultCard({ onViewRegistered, onViewMatches
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-y border-white/10 py-3 text-xs">
-        <Metric label="Candidate matches" value={MOCK_RESULT.matches} />
-        <Metric label="Inliers" value={MOCK_RESULT.inliers} />
-        <Metric label="Inlier ratio" value={MOCK_RESULT.ratio} />
-        <Metric label="RMSE" value={MOCK_RESULT.rmse} />
-        <Metric label="Sub-pixel error" value={MOCK_RESULT.subpixel} />
+        <Metric label="Candidate matches" value={displayResult.matches} />
+        <Metric label="Inliers" value={displayResult.inliers} />
+        <Metric label="Inlier ratio" value={displayResult.ratio} />
+        <Metric label="RMSE" value={displayResult.rmse} />
+        <Metric label="Sub-pixel error" value={displayResult.subpixel} />
       </div>
 
-      <p className="mt-2 text-[10px] leading-relaxed text-slate-500">Example UI data for the future registration response.</p>
+      <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
+        {result ? 'Computed in-process by LUNA-MATCH Core Engine.' : 'Example UI data for the future registration response.'}
+      </p>
 
-      <div className="mt-3 flex gap-2">
-        <ResultAction onClick={onViewRegistered} icon={<ImageIcon size={12} />} label="Registered image" />
-        <ResultAction onClick={onViewMatches} icon={<ExternalLink size={12} />} label="Match points" />
+      <div className="mt-3 flex flex-wrap gap-2">
+        <ResultAction
+          active={activePreview === 'registered'}
+          onClick={() => handleToggle('registered', onViewRegistered)}
+          icon={<ImageIcon size={12} />}
+          label="Registered image"
+        />
+        <ResultAction
+          active={activePreview === 'matches'}
+          onClick={() => handleToggle('matches', onViewMatches)}
+          icon={<ExternalLink size={12} />}
+          label="Match points"
+        />
+        {hasOverlayImage && (
+          <ResultAction
+            active={activePreview === 'overlay'}
+            onClick={() => handleToggle('overlay')}
+            icon={<Layers size={12} />}
+            label="Overlay comparison"
+          />
+        )}
       </div>
+
+      {activePreview && (
+        <div className="mt-3 overflow-hidden rounded-lg border border-cyan-400/30 bg-black/90 p-2">
+          <div className="flex items-center justify-between pb-1.5 text-[10px] font-mono text-cyan-300">
+            <span>
+              {activePreview === 'registered' ? 'Registered Warped Image' : activePreview === 'matches' ? 'Keypoint Correspondences' : 'Overlay Alignment'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActivePreview(null)}
+              className="text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+          <img
+            src={
+              activePreview === 'registered'
+                ? result.registered_image
+                : activePreview === 'matches'
+                ? result.match_points_image
+                : result.overlay_image
+            }
+            alt={activePreview}
+            className="w-full max-h-64 rounded object-contain"
+          />
+        </div>
+      )}
     </div>
   );
 }

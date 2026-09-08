@@ -1,17 +1,42 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
-import { UploadCloud, X, Sparkles, Loader2, Check, Circle } from "lucide-react";
+import { UploadCloud, X, Sparkles, Loader2, Check, Circle, Eye } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
+import { runCorrespondence } from "../../api/lunaMatch";
 
 function ImageBox({ label, image, onSelect, onClear }) {
   const inputRef = useRef(null);
 
   const handleFile = (file) => {
     if (!file) return;
-    onSelect(URL.createObjectURL(file));
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1024;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        onSelect(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -64,17 +89,6 @@ function ImageBox({ label, image, onSelect, onClear }) {
   );
 }
 
-// Placeholder for the real backend call — swap this out once ready.
-async function runCorrespondence(image1, image2) {
-  await new Promise((r) => setTimeout(r, 1800));
-  return {
-    matches: 128,
-    inliers: 96,
-    rmse: 1.42,
-    transform: "Homography",
-  };
-}
-
 export default function AnalysisWorkspace() {
   const sectionRef = useRef(null);
   const inView = useInView(sectionRef, { once: false, amount: 0.15 });
@@ -83,19 +97,24 @@ export default function AnalysisWorkspace() {
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState(null);
   const [analysisPhase, setAnalysisPhase] = useState("");
+  const [activeWorkspaceView, setActiveWorkspaceView] = useState("matches");
 
   const canRun = imageOne && imageTwo && !isRunning;
 
   const handleRun = async () => {
     setIsRunning(true);
     setResult(null);
-    setAnalysisPhase("Detecting common features");
-    await new Promise((resolve) => setTimeout(resolve, 550));
-    setAnalysisPhase("Estimating alignment");
-    const data = await runCorrespondence(imageOne, imageTwo);
-    setAnalysisPhase("Complete");
-    setResult(data);
-    setIsRunning(false);
+    setAnalysisPhase("Detecting keypoints & computing homography...");
+    try {
+      const data = await runCorrespondence(imageOne, imageTwo);
+      setAnalysisPhase("Complete");
+      setResult(data);
+    } catch (err) {
+      console.error("AnalysisWorkspace registration error:", err);
+      setAnalysisPhase("Registration failed");
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -114,7 +133,7 @@ export default function AnalysisWorkspace() {
         </h2>
         <p className="mt-4 max-w-md text-white/60">
           Add two images of the same lunar region and LUNA-MATCH will find
-          the correspondence between them.
+          the correspondence between them in-process.
         </p>
 
         <Card className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border-zinc-800 bg-zinc-950/60 px-4 py-3 shadow-none">
@@ -174,11 +193,70 @@ export default function AnalysisWorkspace() {
         </div>
 
         {result && (
-          <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Metric label="Matches" value={result.matches} />
-            <Metric label="Inliers" value={result.inliers} />
-            <Metric label="RMSE" value={result.rmse} />
-            <Metric label="Model" value={result.transform} />
+          <div className="mt-8 space-y-6">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <Metric label="Matches" value={result.matches ?? result.metrics?.matches ?? "0"} />
+              <Metric label="Inliers" value={result.inliers ?? result.metrics?.inliers ?? "0"} />
+              <Metric label="RMSE" value={result.rmse ?? result.metrics?.rmse ?? "N/A"} />
+              <Metric label="Model" value={result.transform ?? result.metrics?.transform ?? "Homography"} />
+            </div>
+
+            {(result.matchPointsImage || result.registeredImage || result.overlayImage) && (
+              <Card className="overflow-hidden rounded-2xl border-white/10 bg-zinc-950/80 p-5">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Visual Alignment Output</h3>
+                    <p className="text-xs text-white/50">Computed in-process by LUNA-MATCH Core Engine</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {result.matchPointsImage && (
+                      <Button
+                        variant={activeWorkspaceView === "matches" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveWorkspaceView("matches")}
+                        className="text-xs"
+                      >
+                        Match Points
+                      </Button>
+                    )}
+                    {result.registeredImage && (
+                      <Button
+                        variant={activeWorkspaceView === "registered" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveWorkspaceView("registered")}
+                        className="text-xs"
+                      >
+                        Registered Warped
+                      </Button>
+                    )}
+                    {result.overlayImage && (
+                      <Button
+                        variant={activeWorkspaceView === "overlay" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveWorkspaceView("overlay")}
+                        className="text-xs"
+                      >
+                        Overlay
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-center bg-black/60 p-2 rounded-xl">
+                  <img
+                    src={
+                      activeWorkspaceView === "matches"
+                        ? result.matchPointsImage
+                        : activeWorkspaceView === "registered"
+                        ? result.registeredImage
+                        : result.overlayImage
+                    }
+                    alt={activeWorkspaceView}
+                    className="max-h-96 w-auto rounded-lg object-contain"
+                  />
+                </div>
+              </Card>
+            )}
           </div>
         )}
       </div>
