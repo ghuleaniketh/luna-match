@@ -52,7 +52,7 @@ class LunaMatchOrchestrator:
             return IntentType.REGISTER_IMAGES
 
         # 2. Explanation of existing registration result
-        if has_registration_result and ("reliable" in q_lower or "result" in q_lower or "rmse" in q_lower or "inlier" in q_lower or "align" in q_lower or "accurate" in q_lower or "why" in q_lower or "overlay" in q_lower):
+        if has_registration_result and ("reliable" in q_lower or "result" in q_lower or "rmse" in q_lower or "inlier" in q_lower or "align" in q_lower or "accurate" in q_lower or "why" in q_lower or "overlay" in q_lower or "explain" in q_lower or "how" in q_lower or "detail" in q_lower or "good" in q_lower):
             return IntentType.EXPLAIN_REGISTRATION
 
         # 3. Two images uploaded and comparison requested
@@ -141,42 +141,36 @@ class LunaMatchOrchestrator:
                 tools_called=tools_called,
             )
 
-        # Intent 4: Perform Image Registration
+        # Intent 4: Perform Image Registration (fast engine-only execution, ~1.5-2s)
         elif intent == IntentType.REGISTER_IMAGES:
             tools_called.append("register_images")
 
-            # Execute Core ML registration and RAG retrieval concurrently
-            import concurrent.futures
-            rag_query = "Root Mean Square Error RMSE inlier ratio subpixel accuracy"
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                future_reg = executor.submit(
-                    self.tools.register_images,
-                    source_image=source_image,
-                    reference_image=reference_image,
-                )
-                future_rag = executor.submit(
-                    self.tools.search_lunar_knowledge,
-                    query=rag_query,
-                    top_k=2,
-                )
-                reg_result: RegistrationResult = future_reg.result()
-                rag_res = future_rag.result()
-
-            tools_called.append("explain_registration")
-            explanation = self.tools.explain_registration(
+            reg_result: RegistrationResult = self.tools.register_images(
                 source_image=source_image,
                 reference_image=reference_image,
-                overlay_image=reg_result.overlay_image,
-                metrics=reg_result.to_metrics_dict(),
-                question=query,
-                rag_context=rag_res["context"],
             )
+
+            if reg_result.status == "success":
+                metrics = reg_result.to_metrics_dict()
+                inliers = metrics.get("inliers", 0)
+                rmse = metrics.get("rmse", 0.0)
+                ratio_pct = metrics.get("inlier_ratio_percent", "0.0%")
+                text_resp = (
+                    f"Registration complete ({inliers} inliers, RMSE: {rmse} px, inlier ratio: {ratio_pct}). "
+                    f"Ask me to explain these results for a detailed scientific interpretation."
+                )
+            else:
+                err = reg_result.error_message or "Geometric verification failed"
+                text_resp = (
+                    f"Registration failed: {err}. "
+                    f"Ask me to explain what might have gone wrong with these lunar scenes."
+                )
 
             return AgentResponse(
                 intent=intent,
-                text_response=explanation["explanation"],
+                text_response=text_resp,
                 registration_result=reg_result.model_dump(),
-                sources=rag_res["sources"],
+                sources=[],
                 tools_called=tools_called,
             )
 

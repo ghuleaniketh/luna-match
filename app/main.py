@@ -80,6 +80,8 @@ class ChatRequest(BaseModel):
     query: str
     source_image_b64: Optional[str] = None   # base64 data URI or plain base64
     reference_image_b64: Optional[str] = None
+    current_registration: Optional[Dict[str, Any]] = None
+    registration_result: Optional[Dict[str, Any]] = None
 
 
 class ChatResponse(BaseModel):
@@ -169,11 +171,21 @@ def orchestrate(request: ChatRequest):
     source_img = _b64_to_pil(request.source_image_b64)
     reference_img = _b64_to_pil(request.reference_image_b64)
 
+    reg_dict = request.current_registration or request.registration_result
+    curr_reg = None
+    if reg_dict:
+        from app.core_api import RegistrationResult
+        try:
+            curr_reg = RegistrationResult.model_validate(reg_dict)
+        except Exception:
+            curr_reg = None
+
     try:
         response = orch.process(
             query=request.query,
             source_image=source_img,
             reference_image=reference_img,
+            current_registration=curr_reg,
         )
         return ChatResponse(
             intent=response.intent.value,

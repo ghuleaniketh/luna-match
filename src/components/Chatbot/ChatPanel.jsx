@@ -40,6 +40,7 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState([]);
+  const [currentRegistration, setCurrentRegistration] = useState(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef(null);
   const responseTimerRef = useRef(null);
@@ -69,7 +70,12 @@ export default function ChatPanel({ isOpen, onClose, onSendMessage, onImageAttac
         query: userPrompt,
         source_image_b64: currentAttachments[0]?.dataUrl || null,
         reference_image_b64: currentAttachments[1]?.dataUrl || null,
+        current_registration: currentRegistration,
       });
+
+      if (resp.registration_result) {
+        setCurrentRegistration(resp.registration_result);
+      }
 
       setMessages((current) => [
         ...current,

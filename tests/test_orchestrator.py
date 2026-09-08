@@ -73,8 +73,9 @@ def test_orchestrator_rag_processing(orchestrator):
 
 
 def test_orchestrator_registration_flow(orchestrator, test_images):
-    """Test full registration workflow routing."""
+    """Test full two-stage registration workflow: fast engine registration followed by deep explanation."""
     img1, img2 = test_images
+    # Stage 1: Registration only (fast engine execution, no VLM/RAG)
     response: AgentResponse = orchestrator.process(
         query="Register these two images and evaluate the result.",
         source_image=img1,
@@ -83,7 +84,21 @@ def test_orchestrator_registration_flow(orchestrator, test_images):
 
     assert response.intent == IntentType.REGISTER_IMAGES
     assert "register_images" in response.tools_called
-    assert "explain_registration" in response.tools_called
+    assert "explain_registration" not in response.tools_called
     assert response.registration_result is not None
     assert response.registration_result["status"] == "success"
-    assert "RMSE" in response.text_response or "rmse" in response.text_response.lower() or "0.42" in response.text_response
+    assert "Registration complete" in response.text_response or "RMSE" in response.text_response
+
+    # Stage 2: Follow-up explanation request using previous registration result
+    from app.core_api.client import RegistrationResult
+    reg_obj = RegistrationResult.model_validate(response.registration_result)
+    explain_response: AgentResponse = orchestrator.process(
+        query="Explain this registration result and evaluate whether it is reliable.",
+        source_image=img1,
+        reference_image=img2,
+        current_registration=reg_obj,
+    )
+
+    assert explain_response.intent == IntentType.EXPLAIN_REGISTRATION
+    assert "explain_registration" in explain_response.tools_called
+    assert len(explain_response.text_response) > 50

@@ -10,11 +10,12 @@ const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000';
  * @param {string|null} [params.reference_image_b64] - Base64 data URI of reference image
  * @returns {Promise<{intent: string, text_response: string, registration_result: object|null, sources: Array, tools_called: Array}>}
  */
-export async function orchestrate({ query, source_image_b64 = null, reference_image_b64 = null }) {
+export async function orchestrate({ query, source_image_b64 = null, reference_image_b64 = null, current_registration = null }) {
   const payload = {
     query,
     source_image_b64,
     reference_image_b64,
+    current_registration,
   };
 
   const response = await fetch(`${API_BASE_URL}/orchestrate`, {
