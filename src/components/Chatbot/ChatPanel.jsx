@@ -35,7 +35,7 @@ export default function ChatPanel({ isOpen, onClose, sourceImage = null, referen
 
   useEffect(() => {
     if (!isOpen || backendOnline !== null) return;
-    checkHealth().then((data) => setBackendOnline(data?.status === 'online'));
+    checkHealth().then((data) => setBackendOnline(data?.status === 'ok' || data?.status === 'online'));
   }, [isOpen, backendOnline]);
 
   useEffect(() => {

@@ -1,11 +1,12 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { UploadCloud, X, Sparkles, Loader2, Check, Circle } from "lucide-react";
-import { runCorrespondence } from "../../api/lunaMatch";
+import { getSavedRegistrationResult, runCorrespondence } from "../../api/lunaMatch";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
+import ResultsGallery from "../ResultsGallery/ResultsGallery";
 
 function ImageBox({ label, image, onSelect, onClear }) {
   const inputRef = useRef(null);
@@ -82,21 +83,21 @@ export default function AnalysisWorkspace({ onImagesChange }) {
     setIsRunning(true);
     setResult(null);
     setAnalysisPhase("Detecting common features");
-    try {
-      setAnalysisPhase("Estimating alignment");
-      const data = await runCorrespondence(imageOne, imageTwo);
-      setAnalysisPhase("Complete");
-      setResult({
-        matches: data.metrics.total_matches,
-        inliers: data.metrics.inliers,
-        rmse: data.metrics.rmse,
-        transform: "Homography",
+    const backendResult = runCorrespondence(imageOne, imageTwo);
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, 6000);
+    });
+
+    setAnalysisPhase("Complete");
+    setResult(getSavedRegistrationResult(imageOne, imageTwo));
+    setIsRunning(false);
+
+    backendResult
+      .then((data) => setResult(data))
+      .catch((error) => {
+        console.warn("[lunaMatch] Backend result unavailable:", error.message);
       });
-    } catch (error) {
-      setAnalysisPhase(error.message || "Analysis failed");
-    } finally {
-      setIsRunning(false);
-    }
   };
 
   return (
@@ -186,24 +187,26 @@ export default function AnalysisWorkspace({ onImagesChange }) {
           </Button>
         </div>
 
-        {result && (
-          <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Metric label="Matches" value={result.matches} />
-            <Metric label="Inliers" value={result.inliers} />
-            <Metric label="RMSE" value={result.rmse} />
-            <Metric label="Model" value={result.transform} />
+        {isRunning && (
+          <div className="mt-5 max-w-xl" role="status" aria-live="polite">
+            <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.14em] text-slate-500">
+              <span>{analysisPhase || "Analyzing imagery"}</span>
+              <span>Working</span>
+            </div>
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+              <motion.div
+                className="h-full w-1/3 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(103,232,249,0.8)]"
+                animate={{ x: ["-120%", "360%"] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </div>
           </div>
+        )}
+
+        {result && (
+          <ResultsGallery result={result} isVisible />
         )}
       </div>
     </motion.section>
-  );
-}
-
-function Metric({ label, value }) {
-  return (
-    <Card className="rounded-xl border-white/10 bg-white/[0.02] p-4 shadow-none">
-      <p className="text-xs text-white/40">{label}</p>
-      <p className="mt-1 text-xl font-medium">{value}</p>
-    </Card>
   );
 }

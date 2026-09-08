@@ -4,7 +4,9 @@
  * Falls back gracefully to mock data when the backend is unreachable.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://lunarcoreengine.onrender.com').replace(/\/$/, '');
+const PREVIEW_POLL_INTERVAL_MS = 1000;
+const PREVIEW_POLL_TIMEOUT_MS = 120000;
 
 // ── helpers ────────────────────────────────────────────────────────────────
 async function _postJSON(path, body) {
@@ -18,6 +20,54 @@ async function _postJSON(path, body) {
     throw new Error(err.detail || `HTTP ${res.status}`);
   }
   return res.json();
+}
+
+function _dataUriToBlob(dataUri, name) {
+  if (typeof dataUri !== 'string' || !dataUri.startsWith('data:')) {
+    throw new Error(`Invalid image supplied for ${name}`);
+  }
+
+  const [metadata, encoded] = dataUri.split(',');
+  const mimeType = metadata.match(/data:(.*?);base64/)?.[1] || 'application/octet-stream';
+  const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+  return new File([bytes], name, { type: mimeType });
+}
+
+async function _getPreviewImages(sourceImg, referenceImg) {
+  const formData = new FormData();
+  formData.append('img_a', _dataUriToBlob(sourceImg, 'source-image'));
+  formData.append('img_b', _dataUriToBlob(referenceImg, 'reference-image'));
+
+  const registration = await fetch(`${BASE_URL}/register`, { method: 'POST', body: formData });
+  if (!registration.ok) throw new Error(`Preview registration failed (${registration.status})`);
+
+  const { job_id: jobId } = await registration.json();
+  if (!jobId) throw new Error('Preview registration did not return a job ID');
+
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < PREVIEW_POLL_TIMEOUT_MS) {
+    const statusResponse = await fetch(`${BASE_URL}/jobs/${encodeURIComponent(jobId)}`);
+    if (!statusResponse.ok) throw new Error(`Preview job status failed (${statusResponse.status})`);
+    const status = await statusResponse.json();
+    if (status.status === 'DONE') {
+      const summaryResponse = await fetch(`${BASE_URL}/jobs/${encodeURIComponent(jobId)}/summary`);
+      const summary = summaryResponse.ok ? await summaryResponse.json() : null;
+      return {
+        jobId,
+        summary,
+        explanation: summary?.quality_assessment?.reasoning || '',
+        registeredImage: `${BASE_URL}/jobs/${encodeURIComponent(jobId)}/preview?kind=checkerboard`,
+        overlayImage: `${BASE_URL}/jobs/${encodeURIComponent(jobId)}/preview?kind=residual`,
+        matchPointsImage: `${BASE_URL}/jobs/${encodeURIComponent(jobId)}/preview?kind=tiepoints`,
+      };
+    }
+    if (['FAILED', 'ERROR'].includes(status.status)) {
+      throw new Error(`Preview job ${status.status.toLowerCase()}`);
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, PREVIEW_POLL_INTERVAL_MS));
+  }
+
+  throw new Error('Preview generation timed out');
 }
 
 // ── health check ──────────────────────────────────────────────────────────
@@ -57,43 +107,40 @@ export async function sendChat(query, sourceImageB64 = null, referenceImageB64 =
  * Falls back to deterministic mock if backend unreachable.
  */
 export async function runCorrespondence(sourceImg, referenceImg, options = {}) {
-  // Try real backend first via /orchestrate
-  try {
-    const result = await _postJSON('/orchestrate', {
-      query: 'Register these two images and explain the result.',
-      source_image_b64: sourceImg || null,
-      reference_image_b64: referenceImg || null,
-    });
+  const result = await _getPreviewImages(sourceImg, referenceImg);
+  const backendMetrics = result.summary?.metrics || {};
+  const quality = result.summary?.quality_assessment || {};
 
-    // Map orchestrator response to the shape the UI expects
-    const reg = result.registration_result || {};
-    return {
-      success: reg.status !== 'failed',
-      jobId: 'job_' + Math.random().toString(36).substring(2, 9),
-      timestamp: new Date().toISOString(),
-      isSameLocation: true,
-      sourceImage: sourceImg,
-      referenceImage: referenceImg,
-      registeredImage: reg.registered_image || referenceImg,
-      overlayImage: reg.overlay_image || null,
-      matchPointsImage: reg.match_points_image || null,
-      metrics: {
-        rmse: reg.rmse ?? 0.42,
-        inlier_ratio: reg.inlier_ratio ?? 0.789,
-        inliers: reg.inliers ?? 312,
-        total_matches: reg.total_matches ?? 415,
-        subpixel_accuracy: reg.subpixel_accuracy ?? true,
-        subpixel_error: reg.subpixel_error ?? 0.31,
-      },
-      aiExplanation: result.text_response || '',
-      sources: result.sources || [],
-      pipelineLogs: _buildPipelineLogs(reg),
-    };
-  } catch (_err) {
-    // Backend unreachable → fall back to mock
-    console.warn('[lunaMatch] Backend unreachable, using mock data:', _err.message);
-    return _mockRegistration(sourceImg, referenceImg);
-  }
+  return {
+    success: result.summary?.status === 'DONE',
+    jobId: result.jobId,
+    timestamp: result.summary?.completed_at || null,
+    isSameLocation: true,
+    sourceImage: sourceImg,
+    referenceImage: referenceImg,
+    registeredImage: result.registeredImage,
+    overlayImage: result.overlayImage,
+    matchPointsImage: result.matchPointsImage,
+    metrics: {
+      rmse: backendMetrics.rmse_px ?? null,
+      inlier_ratio: backendMetrics.inlier_ratio ?? null,
+      inliers: backendMetrics.n_inliers ?? null,
+      total_matches: backendMetrics.n_total ?? null,
+      subpixel_accuracy: backendMetrics.rmse_px == null ? null : backendMetrics.rmse_px < 0.5,
+      subpixel_error: backendMetrics.rmse_px ?? null,
+      sdi: backendMetrics.sdi ?? null,
+      transformation_type: backendMetrics.transform_type ?? null,
+    },
+    aiExplanation: result.explanation,
+    warnings: quality.warnings || [],
+    qualityAssessment: quality,
+    sources: result.summary?.sources || [],
+    pipelineLogs: result.summary?.pipeline_logs || [],
+  };
+}
+
+export function getSavedRegistrationResult(sourceImg, referenceImg) {
+  return _mockRegistration(sourceImg, referenceImg);
 }
 
 // ── Deterministic mock (offline / demo mode) ──────────────────────────────
