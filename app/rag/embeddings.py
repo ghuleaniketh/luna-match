@@ -31,12 +31,13 @@ class EmbeddingModel:
             _ = self.model
         return self._dimension
 
-    def embed_texts(self, texts: List[str]) -> np.ndarray:
-        """Generate normalized float32 embeddings for a batch of texts."""
+    def embed_texts(self, texts: List[str], batch_size: int = 8) -> np.ndarray:
+        """Generate normalized embeddings in small batches for low-memory machines."""
         if not texts:
             return np.empty((0, self.dimension), dtype=np.float32)
         embeddings = self.model.encode(
             texts,
+            batch_size=batch_size,
             show_progress_bar=False,
             convert_to_numpy=True,
             normalize_embeddings=True,

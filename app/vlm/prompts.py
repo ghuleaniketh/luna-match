@@ -39,6 +39,15 @@ Please evaluate:
 
 Reminder: Do NOT compute or claim a quantitative geometric transformation. This comparison is a descriptive visual assessment."""
 
+# Keep image comparisons concise enough for hosted VLM output limits.
+IMAGE_COMPARISON_PROMPT += """
+
+Return only the final report, with these four short headings:
+**Terrain overlap**, **Scale/detail**, **Illumination**, and **Registration landmarks**.
+Use no `<think>` tags, no hidden reasoning, and no repeated discussion of image panels.
+If the files contain stacked or composite panels, state that uncertainty once and continue.
+Keep the report under 300 words."""
+
 # Prompt for explaining Core ML registration results with overlay and metrics
 REGISTRATION_EXPLANATION_PROMPT = """You are provided with:
 1. Source Image (Sensed)

@@ -19,6 +19,7 @@ def ingest_knowledge_base(
     index_dir: Path = settings.RAG_INDEX_DIR,
     chunk_size: int = 450,
     chunk_overlap: int = 80,
+    additional_dirs: List[Path] | None = None,
 ) -> int:
     """
     Ingest all markdown, text, and PDF documents from knowledge_dir into index_dir.
@@ -31,7 +32,14 @@ def ingest_knowledge_base(
     print("=" * 60)
     print("[LUNA-MATCH] RAG INGESTION PIPELINE")
     print("=" * 60)
-    print(f"Scanning directory: {knowledge_dir.resolve()}")
+    source_dirs = [Path(knowledge_dir)]
+    for source_dir in additional_dirs or [settings.RAG_DATA_DIR]:
+        source_dir = Path(source_dir)
+        if source_dir not in source_dirs and source_dir.exists():
+            source_dirs.append(source_dir)
+    print("Scanning directories:")
+    for source_dir in source_dirs:
+        print(f"  - {source_dir.resolve()}")
 
     chunker = DocumentChunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     all_chunks: List[DocumentChunk] = []
@@ -39,8 +47,10 @@ def ingest_knowledge_base(
     # Supported file formats
     patterns = ["**/*.md", "**/*.txt", "**/*.pdf"]
     doc_files: List[Path] = []
-    for pattern in patterns:
-        doc_files.extend(list(knowledge_dir.glob(pattern)))
+    for source_dir in source_dirs:
+        for pattern in patterns:
+            doc_files.extend(source_dir.glob(pattern))
+    doc_files = sorted({path.resolve() for path in doc_files})
 
     if not doc_files:
         print(f"[Warning] No documents found in {knowledge_dir} matching {patterns}")
@@ -48,7 +58,7 @@ def ingest_knowledge_base(
 
     print(f"Found {len(doc_files)} knowledge document(s):")
     for doc in doc_files:
-        print(f"  - {doc.relative_to(knowledge_dir.parent if knowledge_dir.parent.exists() else knowledge_dir)}")
+        print(f"  - {doc}")
 
     # Chunk all documents
     for doc_path in doc_files:
@@ -68,7 +78,7 @@ def ingest_knowledge_base(
     start_time = time.time()
     embedding_model = EmbeddingModel(settings.RAG_EMBEDDING_MODEL)
     texts = [chunk.text for chunk in all_chunks]
-    embeddings = embedding_model.embed_texts(texts)
+    embeddings = embedding_model.embed_texts(texts, batch_size=8)
     duration = time.time() - start_time
     print(f"Generated {embeddings.shape[0]} embeddings of dimension {embeddings.shape[1]} in {duration:.2f}s")
 

@@ -235,3 +235,33 @@ async def analyze_image(
         return {"description": description}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"VLM analysis error: {str(exc)}")
+
+
+# ── Compare Two Images Endpoint ──────────────────────────────────────────────
+@app.post("/compare", tags=["vision"])
+async def compare_images(
+    source_image: UploadFile = File(..., description="Source lunar image"),
+    reference_image: UploadFile = File(..., description="Reference lunar image"),
+    question: str = Form("Compare these source and reference lunar images."),
+):
+    """Compare source and reference lunar images with the configured VLM."""
+    from PIL import Image as PILImage
+
+    try:
+        source_bytes = await source_image.read()
+        reference_bytes = await reference_image.read()
+        source = PILImage.open(io.BytesIO(source_bytes)).convert("RGB")
+        reference = PILImage.open(io.BytesIO(reference_bytes)).convert("RGB")
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not decode images: {exc}")
+
+    tools = get_tools()
+    try:
+        comparison = tools.compare_images(
+            source_image=source,
+            reference_image=reference,
+            question=question,
+        )
+        return {"comparison": comparison}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"VLM comparison error: {str(exc)}")

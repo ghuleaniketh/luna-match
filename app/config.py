@@ -25,10 +25,15 @@ class Settings(BaseSettings):
 
     # VLM Configuration
     VLM_MODEL: str = "Qwen/Qwen3-VL-8B-Instruct"
-    # Backend: "transformers" = local Qwen3-VL, "openai" = vLLM/OpenAI API, "mock" = offline demo
-    VLM_BACKEND: Literal["openai", "transformers", "mock"] = "mock"
+    # Backend: local Qwen3-VL, OpenAI-compatible API, Groq-hosted VLM, or offline demo.
+    VLM_BACKEND: Literal["openai", "groq", "transformers", "mock"] = "mock"
     VLM_BASE_URL: str = "https://api.openai.com/v1"
     VLM_API_KEY: str = ""
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
+    GROQ_API_KEY: str = ""
+    # Recommended Groq multimodal/default model for image-aware chat.
+    # If using a different Groq model, override it in your local .env file.
+    GROQ_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     VLM_MAX_TOKENS: int = 2048       # max_new_tokens for generation
 
     # Qwen3-VL recommended VL generation hyperparameters
@@ -41,6 +46,7 @@ class Settings(BaseSettings):
     RAG_EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     RAG_INDEX_DIR: Path = BASE_DIR / "data" / "index"
     KNOWLEDGE_DIR: Path = BASE_DIR / "knowledge"
+    RAG_DATA_DIR: Path = BASE_DIR / "data"
     RAG_TOP_K: int = 4
     RAG_SCORE_THRESHOLD: float = 0.35
 

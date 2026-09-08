@@ -16,6 +16,12 @@ from app.config import settings
 from app.vlm.prompts import SYSTEM_PROMPT
 
 
+def clean_vlm_response(text: str) -> str:
+    """Remove hidden reasoning markup before exposing a model response to callers."""
+    cleaned = re.sub(r"<think>.*?(?:</think>|$)", "", text, flags=re.IGNORECASE | re.DOTALL)
+    return cleaned.strip()
+
+
 def encode_image_to_base64(image: Union[str, Path, Image.Image]) -> str:
     """Convert an image path or PIL Image to a base64 JPEG/PNG data URL."""
     if isinstance(image, (str, Path)):
@@ -116,8 +122,9 @@ class OpenAIVLMClient(BaseVLMClient):
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
+                reasoning_effort="none",
             )
-            return response.choices[0].message.content.strip()
+            return clean_vlm_response(response.choices[0].message.content or "")
         except Exception as e:
             return f"[Error communicating with VLM API endpoint ({self.base_url})]: {str(e)}"
 
@@ -369,6 +376,12 @@ def get_vlm_client() -> BaseVLMClient:
     backend = settings.VLM_BACKEND.lower()
     if backend == "openai":
         return OpenAIVLMClient()
+    elif backend == "groq":
+        return OpenAIVLMClient(
+            model=settings.GROQ_MODEL,
+            base_url=settings.GROQ_BASE_URL,
+            api_key=settings.GROQ_API_KEY,
+        )
     elif backend == "transformers":
         return TransformersVLMClient()
     elif backend == "mock":
