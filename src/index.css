@@ -34,12 +34,25 @@
   }
 }
 
-@keyframes loader-rocket-orbit {
+@keyframes loader-exit {
   from {
-    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 1;
   }
   to {
-    transform: translate(-50%, -50%) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes site-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 
@@ -53,6 +66,27 @@
   z-index: 100;
 }
 
+.site-loader--exiting {
+  animation: loader-exit 0.35s ease forwards;
+  pointer-events: none;
+}
+
+.site-content,
+.app-shell > footer {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(4px);
+}
+
+.app-shell--ready .site-content,
+.app-shell--ready > footer {
+  animation: site-content-enter 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.app-shell--ready > footer {
+  animation-delay: 0.08s;
+}
+
 .site-loader__content {
   align-items: center;
   display: flex;
@@ -60,65 +94,12 @@
   width: min(220px, calc(100vw - 48px));
 }
 
-.site-loader__mark {
-  height: 86px;
-  margin-bottom: 24px;
-  position: relative;
-  width: 160px;
-}
-
-.site-loader__moon {
-  background: linear-gradient(145deg, #f4f4f5 0%, #a1a1aa 100%);
-  border-radius: 999px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
-  height: 52px;
-  left: 54px;
-  position: absolute;
-  top: 17px;
-  width: 52px;
-}
-
-.site-loader__moon-detail {
-  background: rgba(63, 63, 70, 0.2);
-  border-radius: 999px;
-  position: absolute;
-}
-
-.site-loader__moon-detail--one {
-  height: 9px;
-  left: 13px;
-  top: 13px;
-  width: 9px;
-}
-
-.site-loader__moon-detail--two {
-  bottom: 11px;
-  height: 6px;
-  right: 12px;
-  width: 6px;
-}
-
-.site-loader__orbit {
-  border: 1px solid rgba(96, 165, 250, 0.55);
-  border-radius: 999px;
-  height: 64px;
-  left: 145px;
-  position: absolute;
-  top: 43px;
-  transform: translate(-50%, -50%) rotate(-20deg) scaleY(0.36);
-  width: 142px;
-}
-
-.site-loader__rocket {
-  animation: loader-rocket-orbit 2.8s linear infinite;
-  color: #60a5fa;
-  height: 17px;
-  left: 80px;
-  position: absolute;
-  top: 43px;
-  transform: translate(-50%, -50%) rotate(0deg);
-  transform-origin: -65px 0;
-  width: 17px;
+.site-loader__gif {
+  display: block;
+  height: 112px;
+  margin: 0 auto 18px;
+  object-fit: contain;
+  width: 112px;
 }
 
 .site-loader__name {
@@ -138,7 +119,7 @@
 }
 
 .site-loader__track span {
-  animation: loader-progress 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: loader-progress 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   background: #60a5fa;
   display: block;
   height: 100%;
