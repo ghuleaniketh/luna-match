@@ -83,6 +83,50 @@ export default function App() {
         )}
       </AnimatePresence>
       <ChatToggle isOpen={chatOpen} onToggle={() => setChatOpen((prev) => !prev)} />
+import Convergence from './components/Convergence/Convergence';
+import AboutImages from './components/AboutImages/AboutImages';
+import AnalysisWorkspace from './components/AnalysisWorkspace/AnalysisWorkspace';
+import ChatPanel from './components/Chatbot/ChatPanel';
+import ChatToggle from './components/Chatbot/ChatToggle';
+import SiteLoader from './components/ui/SiteLoader';
+
+export default function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  return (
+    <div className="relative flex min-h-screen flex-col bg-[#09090b] text-zinc-100">
+      <SiteLoader />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden space-grid"
+      >
+        <video
+          className="absolute inset-0 h-full w-full object-cover opacity-100"
+          src="/backgoundvideo.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#09090b]/75 via-[#09090b]/55 to-[#09090b]/90" />
+      </div>
+
+      <main className="relative z-10 flex-1">
+        <Hero />
+        <Convergence />
+        <AboutImages />
+        <AnalysisWorkspace />
+      </main>
+
+      <AnimatePresence>
+        {isChatOpen && (
+          <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+        )}
+      </AnimatePresence>
+      <ChatToggle
+        isOpen={isChatOpen}
+        onToggle={() => setIsChatOpen((open) => !open)}
+      />
     </div>
   );
 }
