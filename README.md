@@ -1,3 +1,12 @@
+---
+title: LUNA-MATCH API
+emoji: 🌙
+colorFrom: blue
+colorTo: cyan
+sdk: docker
+app_port: 7860
+---
+
 # 🌙 LUNA-MATCH: AI Layer
 
 > **Smart India Hackathon 2026 (SIH26166)**:  
@@ -158,3 +167,16 @@ This repository includes `render.yaml` and `requirements-api.txt` for a lightwei
 5. In Vercel, add `VITE_API_BASE_URL=https://<render-service>.onrender.com`, then redeploy the frontend.
 
 Do not commit `.env` or API keys. Render's free service may sleep when idle, so the first request after inactivity can take a little longer.
+
+### 7. Deploy Without a Card on Hugging Face Spaces
+
+The root `Dockerfile` is ready for a free Docker Space.
+
+1. Create a new Space at [Hugging Face Spaces](https://huggingface.co/new-space).
+2. Choose **Docker** as the SDK and **CPU basic** hardware.
+3. Upload or sync this repository to the Space.
+4. Add `GROQ_API_KEY` under the Space **Settings > Variables and secrets**.
+5. Wait for the Space to build, then test `https://<username>-<space-name>.hf.space/health`.
+6. Set that URL as Vercel's `VITE_API_BASE_URL` and redeploy the frontend.
+
+The Space listens on port `7860`. The API uses Groq for VLM inference and the included FAISS index for RAG, so no local Qwen model download is required.
