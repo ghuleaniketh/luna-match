@@ -41,6 +41,7 @@ export default function Convergence() {
 
   return (
     <section
+      id="overview"
       ref={sectionRef}
       className="relative overflow-hidden px-6 py-20 text-white sm:px-8 md:px-12 lg:px-16 md:py-28"
     >
@@ -52,20 +53,19 @@ export default function Convergence() {
           animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <div className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-cyan-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#06b6d4]" />
+          <div className="text-xs font-normal text-slate-300">
             Pipeline Architecture
           </div>
 
-          <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-4xl">
-            LUNA<span className="text-cyan-400">-MATCH</span>
+          <h2 className="mt-2 text-3xl font-medium tracking-normal text-slate-100 sm:text-4xl lg:text-4xl">
+            LUNA<span className="text-sky-300">-MATCH</span>
           </h2>
 
-          <h3 className="mt-1.5 text-base font-medium text-slate-200 sm:text-lg">
+          <h3 className="mt-1.5 text-base font-normal text-slate-200 sm:text-lg">
             Bringing Different Views Together
           </h3>
 
-          <p className="mt-3 text-xs leading-relaxed text-slate-400 sm:text-sm">
+          <p className="mt-3 text-xs leading-relaxed text-slate-300/90 sm:text-sm">
             Satellites orbiting the Moon observe the surface under varying
             lighting, perspectives, and sensor resolutions. LUNA-MATCH bridges
             these multi-mission datasets, performing sub-pixel geometric
@@ -80,12 +80,12 @@ export default function Convergence() {
                 <div className="flex items-start gap-3">
                   <Badge
                     variant="outline"
-                    className="shrink-0 rounded-md border-cyan-500/30 bg-transparent px-2 py-0.5 font-mono text-[11px] font-semibold text-cyan-400"
+                    className="shrink-0 rounded-md border-slate-600/80 bg-slate-900/30 px-2 py-0.5 text-[11px] font-normal text-slate-300"
                   >
                     {step.number}
                   </Badge>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-xs font-semibold text-slate-200 sm:text-sm">
+                    <h4 className="text-xs font-medium text-slate-200 sm:text-sm">
                       {step.title}
                     </h4>
                     <p className="mt-0.5 text-[11px] leading-relaxed text-slate-400 sm:text-xs">
@@ -101,12 +101,12 @@ export default function Convergence() {
           </div>
 
           {/* Tagline Callout */}
-          <Card className="mt-6 rounded-xl border border-cyan-500/30 bg-transparent p-3.5 shadow-[0_0_20px_rgba(6,182,212,0.08)] backdrop-blur-none sm:p-4">
+          <Card className="mt-6 rounded-xl border border-slate-700/80 bg-slate-950/20 p-3.5 shadow-none backdrop-blur-none sm:p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-500/30 bg-transparent text-cyan-400">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900/40 text-sky-300">
                 <Radar className="h-5 w-5" />
               </div>
-              <p className="text-xs font-semibold tracking-wide text-slate-100 sm:text-sm">
+              <p className="text-xs font-normal leading-relaxed text-slate-200 sm:text-sm">
                 Same Moon. Multiple Perspectives. Deeper Insights.
               </p>
             </div>
@@ -160,9 +160,8 @@ export default function Convergence() {
             animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 14 }}
             transition={{ duration: 0.6, delay: 1.2, ease: "easeOut" }}
           >
-            <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_#06b6d4]" />
-              <h4 className="text-[11px] font-bold tracking-wide text-cyan-400 sm:text-xs md:text-sm">
+            <div>
+              <h4 className="font-sans text-[11px] font-semibold tracking-normal text-sky-200 sm:text-xs md:text-sm">
                 Chandrayaan-2 (Source Image)
               </h4>
             </div>
@@ -201,9 +200,8 @@ export default function Convergence() {
             animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 14 }}
             transition={{ duration: 0.6, delay: 1.4, ease: "easeOut" }}
           >
-            <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400 shadow-[0_0_8px_#f97316]" />
-              <h4 className="text-[11px] font-bold tracking-wide text-orange-400 sm:text-xs md:text-sm">
+            <div>
+              <h4 className="font-sans text-[11px] font-semibold tracking-normal text-amber-200 sm:text-xs md:text-sm">
                 LRO (Reference Image)
               </h4>
             </div>
@@ -213,22 +211,6 @@ export default function Convergence() {
             <p className="mt-0.5 text-[9px] leading-relaxed text-slate-400 sm:text-[10px] md:text-[11px]">
               Different viewpoint and conditions
             </p>
-          </motion.div>
-
-          {/* Convergence Point Pill / Badge */}
-          <motion.div
-            className="absolute right-0 top-1/2 z-30 flex -translate-y-1/2 items-center gap-1.5 rounded-full border border-white/20 bg-slate-950/85 px-3 py-1 shadow-lg shadow-black/60 backdrop-blur-md md:right-4 lg:right-6"
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.85 }}
-            transition={{ duration: 0.5, delay: 1.5, ease: "easeOut" }}
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-200 sm:text-[11px]">
-              Same Lunar Region
-            </span>
           </motion.div>
 
           {/* Static shared moon, positioned to reveal only its left half */}

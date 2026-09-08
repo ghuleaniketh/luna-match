@@ -25,24 +25,23 @@ export default function PipelineVisualizer({ stages, currentStageIndex, status }
   const isCompleted = status === 'completed';
 
   return (
-    <section id="pipeline" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <section id="pipeline" className="font-sans py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       <Card className="relative overflow-hidden rounded-3xl border-slate-800 p-6 shadow-2xl sm:p-8">
         {/* Subtle background glow */}
         <div className="absolute top-0 right-1/4 w-96 h-40 bg-cyan-500/5 blur-3xl pointer-events-none" />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-              <h3 className="text-xl font-bold text-slate-100">Neural Correspondence Pipeline</h3>
+            <div>
+              <h3 className="text-xl font-semibold tracking-tight text-slate-100">Neural Correspondence Pipeline</h3>
             </div>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm leading-relaxed text-slate-300 mt-1">
               5-Stage Multi-Illumination Invariant Feature Matching & High-Precision Homography
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs font-mono text-slate-400">Status:</span>
+            <span className="text-xs font-medium text-slate-300">Status:</span>
             {isProcessing && (
               <Badge className="animate-pulse gap-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -84,7 +83,7 @@ export default function PipelineVisualizer({ stages, currentStageIndex, status }
                 <div>
                   {/* Top indicator & Step number */}
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-mono font-bold tracking-wider uppercase text-slate-400">
+                    <span className="text-[11px] font-medium tracking-wide text-slate-300">
                       STAGE 0{stage.id}
                     </span>
                     <div
@@ -105,12 +104,12 @@ export default function PipelineVisualizer({ stages, currentStageIndex, status }
                     <div className={`p-1.5 rounded-lg ${isCurrent ? 'bg-cyan-950 text-cyan-400' : isDone ? 'bg-emerald-950/60 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
                       <IconComponent className="w-4 h-4" />
                     </div>
-                    <h4 className={`text-sm font-bold ${isCurrent ? 'text-cyan-200' : isDone ? 'text-slate-100' : 'text-slate-400'}`}>
+                    <h4 className={`text-sm font-semibold ${isCurrent ? 'text-cyan-100' : isDone ? 'text-slate-100' : 'text-slate-300'}`}>
                       {stage.name}
                     </h4>
                   </div>
 
-                  <p className="text-xs text-slate-400 leading-relaxed mt-1">
+                  <p className="text-xs text-slate-300 leading-relaxed mt-1">
                     {stage.shortDesc}
                   </p>
                 </div>

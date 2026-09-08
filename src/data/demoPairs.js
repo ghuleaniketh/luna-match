@@ -8,7 +8,7 @@ export const demoPairs = [
     label: "Different Illumination",
     description:
       "Same crater ejecta, two sun angles (68° vs 8°) — LROC NAC imagery",
-    source: "/moon1.png",
+    source: "/moon1.jpg",
     reference: "/image.png",
     comingSoon: false,
   },

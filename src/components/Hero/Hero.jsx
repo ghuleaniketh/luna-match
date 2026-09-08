@@ -11,47 +11,46 @@ export default function Hero() {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-[80%] max-w-6xl flex items-center justify-between px-6 sm:px-8 py-3 rounded-full bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] text-sm"
+          className="flex w-fit max-w-[calc(100vw-2rem)] items-center gap-6 rounded-full border border-white/10 bg-slate-950/40 px-5 py-3 text-sm shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-xl sm:gap-8 sm:px-7"
         >
           {/* Brand Logo & Name */}
-          <a href="#" className="flex items-center gap-2.5 group">
-            <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] group-hover:scale-125 transition-transform" />
-            <span className="font-semibold tracking-wider text-xs sm:text-sm uppercase bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+          <a href="#overview" className="group shrink-0">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-200 sm:text-sm">
               LUNA-MATCH
             </span>
           </a>
 
           {/* Nav Links */}
-          <div className="flex items-center gap-6 sm:gap-8 text-xs sm:text-sm text-white/70">
+          <div className="hidden items-center gap-5 text-xs text-white/70 sm:flex sm:text-sm">
             <a
-              href="#demo"
-              className="transition-colors hover:text-cyan-400 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+              href="#overview"
+              className="transition-colors hover:text-cyan-300"
             >
-              Demo
+              Overview
             </a>
             <a
               href="#pipeline"
-              className="transition-colors hover:text-cyan-400 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+              className="transition-colors hover:text-cyan-300"
             >
               Pipeline
             </a>
             <a
-              href="#about"
-              className="transition-colors hover:text-cyan-400 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+              href="#imagery"
+              className="hidden transition-colors hover:text-cyan-300 sm:block"
             >
-              About
+              Imagery
             </a>
           </div>
 
           {/* Quick CTA */}
           <Button
             as="a"
-            href="#demo"
+            href="#analyze"
             size="sm"
             variant="outline"
-            className="hidden rounded-full sm:inline-flex"
+            className="hidden shrink-0 rounded-full sm:inline-flex"
           >
-            Launch
+            Live
           </Button>
         </motion.nav>
       </header>

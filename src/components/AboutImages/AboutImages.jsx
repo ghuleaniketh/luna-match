@@ -75,7 +75,7 @@ export default function AboutImages() {
   const [selectedRefCrop, setSelectedRefCrop] = useState(CROPS.reference[0]);
 
   return (
-    <section className="relative overflow-hidden px-6 py-20 text-white sm:px-8 md:px-12 lg:px-16 md:py-28">
+    <section id="imagery" className="relative overflow-hidden px-6 py-20 text-white sm:px-8 md:px-12 lg:px-16 md:py-28">
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="flex flex-col items-center text-center">
@@ -101,8 +101,7 @@ export default function AboutImages() {
           {/* Source Image Card (Chandrayaan-2 / Cyan Theme) */}
           <div className="flex flex-col space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#06b6d4]" />
+              <div>
                 <h3 className="text-base font-bold text-slate-100 sm:text-lg">
                   Source Observation (Chandrayaan-2)
                 </h3>
@@ -118,7 +117,7 @@ export default function AboutImages() {
             {/* Main Image with Interactive Highlight Box */}
             <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-cyan-500/30 bg-slate-950 shadow-2xl shadow-black/60">
               <img
-                src="/moon1.png"
+                src="/moon1.jpg"
                 alt="Chandrayaan-2 Source Lunar Surface"
                 className="h-full w-full object-cover"
               />
@@ -169,7 +168,7 @@ export default function AboutImages() {
                     >
                       <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-slate-950">
                         <img
-                          src="/moon1.png"
+                          src="/moon1.jpg"
                           alt={crop.name}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                           style={{
@@ -205,7 +204,7 @@ export default function AboutImages() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-cyan-400/40 bg-slate-900 shadow-inner sm:h-32 sm:w-32">
                       <img
-                        src="/moon1.png"
+                        src="/moon1.jpg"
                         alt={selectedSourceCrop.name}
                         className="h-full w-full object-cover"
                         style={{
@@ -235,8 +234,7 @@ export default function AboutImages() {
           {/* Reference Image Card (LRO / Orange Theme) */}
           <div className="flex flex-col space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_8px_#f97316]" />
+              <div>
                 <h3 className="text-base font-bold text-slate-100 sm:text-lg">
                   Reference Observation (LRO)
                 </h3>
